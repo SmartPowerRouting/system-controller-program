@@ -97,8 +97,18 @@ void Error_Handler(void);
 #define VCMU_C3P_GPIO_Port GPIOA
 #define VCMU_C3N_Pin GPIO_PIN_7
 #define VCMU_C3N_GPIO_Port GPIOA
-#define LED0_Pin GPIO_PIN_5
-#define LED0_GPIO_Port GPIOB
+#define LCD_CS_Pin GPIO_PIN_11
+#define LCD_CS_GPIO_Port GPIOD
+#define LCD_DC_Pin GPIO_PIN_12
+#define LCD_DC_GPIO_Port GPIOD
+#define LCD_Backlight_Pin GPIO_PIN_13
+#define LCD_Backlight_GPIO_Port GPIOD
+#define LED0_Pin GPIO_PIN_8
+#define LED0_GPIO_Port GPIOC
+#define LCD_SCK_Pin GPIO_PIN_3
+#define LCD_SCK_GPIO_Port GPIOB
+#define LCD_SDA_Pin GPIO_PIN_5
+#define LCD_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
