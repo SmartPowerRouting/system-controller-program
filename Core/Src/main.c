@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -93,20 +94,8 @@ int main(void)
   MX_ADC1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  // LED self-test
-  HAL_UART_Transmit(&huart1, (uint8_t *)"System Powered On\n", 18, 1000);
-  HAL_GPIO_WritePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(BKUP_STAT_GPIO_Port, BKUP_STAT_Pin, GPIO_PIN_SET);
-  HAL_Delay(1000);
-  HAL_GPIO_WritePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(BKUP_STAT_GPIO_Port, BKUP_STAT_Pin, GPIO_PIN_RESET);
 
   /* USER CODE END 2 */
 
