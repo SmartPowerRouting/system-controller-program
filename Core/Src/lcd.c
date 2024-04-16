@@ -5,44 +5,58 @@
  * @version 0.1
  * @date 2024-04-12
  *
- * * IMPORTANT NOTES:
- * * 1. The screen configuration is 16-bit RGB565 format.
- * * 2. The SPI communication speed is 18Mbps.
- *
- * @ref 极客KE https://shop252966792.taobao.com
- *      Modified for CubeMX by Tiantian Zhong
- *
  */
+
+/***
+        ************************************************************************************************************************************************************************************************
+https://shop252966792.taobao.com
+??
+>>>>> 重要说明：
+        *
+        *  1.屏幕配置为16位RGB565格式
+        *  2.SPI通信速度为 18M  (如果觉得刷屏速度过慢，可以修改
+LCD_SPI_Config() SPI的时钟 )
+   *
+>>>>> 其他说明：
+        *
+        *	1.
+中文字库使用的是小字库，即用到了对应的汉字再去取模，用户可以根据需求自行增添或删减
+        *	2. 各个函数的功能和使用可以参考函数的说明
+        *
+        *********************************************************************************************************************************************************************************************极客KE*****
+***/
 
 #include "lcd.h"
 #include "spi.h"
 
-#define LCD_SPI hspi1         // Define the SPI handler for LCD
-static pFONT *LCD_AsciiFonts; // Define the ASCII font
-LCD_Typedef LCD;              // Define the LCD structure
+#define LCD_SPI hspi1 // SPI局部宏，方便修改和移植
 
-/**
- * The SPI screen needs to configure the coordinate area before updating the
- * display, and then write the display memory. When displaying characters, if
- * you write the coordinates and display memory one by one, it will be very
- * slow. Therefore, a buffer area is opened to write the data to be displayed
- * into the buffer first, and finally write it to the display memory in
- * batches. Users can modify the size of the buffer according to the actual
- * situation. For example, when the user needs to display a 32*32 character,
- * the required size is 32*32*2 = 2048 bytes (each pixel point occupies 2
- * bytes).
- */
-uint16_t LCD_Buff[1024]; // Define the LCD buffer area
+static pFONT *LCD_AsciiFonts; // 英文字体，ASCII字符集
+static pFONT *LCD_CHFonts;    // 中文字体（同时也包含英文字体）
 
-/**
- * @brief Write HEX commands to LCD driver.
- *
- * @param lcd_command
- */
+// 因为这类SPI的屏幕，每次更新显示时，需要先配置坐标区域、再写显存，
+// 在显示字符时，如果是一个个点去写坐标写显存，会非常慢，
+// 因此开辟一片缓冲区，先将需要显示的数据写进缓冲区，最后再批量写入显存。
+// 用户可以根据实际情况去修改此处缓冲区的大小，
+// 例如，用户需要显示32*32的汉字时，需要的大小为 32*32*2 = 2048
+// 字节（每个像素点占2字节）
+uint16_t LCD_Buff[1024]; // LCD缓冲区，16位宽（每个像素点占2字节）
+
+struct // LCD相关参数结构体
+{
+  uint32_t Color;       //	LCD当前画笔颜色
+  uint32_t BackColor;   //	背景色
+  uint8_t ShowNum_Mode; // 数字显示模式
+  uint8_t Direction;    //	显示方向
+  uint16_t Width;       // 屏幕像素长度
+  uint16_t Height;      // 屏幕像素宽度
+  uint8_t X_Offset; // X坐标偏移，用于设置屏幕控制器的显存写入方式
+  uint8_t Y_Offset; // Y坐标偏移，用于设置屏幕控制器的显存写入方式
+} LCD;
+
 void
 LCD_WriteCommand (uint8_t lcd_command)
 {
-  LCD.Direction = Direction_H; // 默认横屏显示
 
   while ((LCD_SPI.Instance->SR & 0x0080) != RESET)
     ; // 先判断SPI是否空闲，等待通信完成
@@ -89,7 +103,7 @@ LCD_WriteData_16bit (uint16_t lcd_data)
 {
   LCD_SPI.Instance->DR = lcd_data >> 8; // 发送数据，高8位
   while ((LCD_SPI.Instance->SR & 0x0002) == 0)
-    ;
+    ;                              // 等待发送缓冲区清空
   LCD_SPI.Instance->DR = lcd_data; // 发送数据，低8位
   while ((LCD_SPI.Instance->SR & 0x0002) == 0)
     ; // 等待发送缓冲区清空
@@ -640,6 +654,7 @@ LCD_DisplayString (uint16_t x, uint16_t y, char *p)
 void
 LCD_SetTextFont (pFONT *fonts)
 {
+  LCD_CHFonts = fonts; // 设置中文字体
   switch (fonts->Width)
     {
     case 12:
@@ -680,6 +695,63 @@ LCD_SetTextFont (pFONT *fonts)
  *
  *****************************************************************************************************************************************/
 
+void
+LCD_DisplayChinese (uint16_t x, uint16_t y, char *pText)
+{
+  uint16_t i = 0, index = 0, counter = 0; // 计数变量
+  uint16_t addr;                          // 字模地址
+  uint8_t disChar;                        // 字模的值
+  uint16_t Xaddress = 0;                  // 水平坐标
+
+  while (1)
+    {
+      // 对比数组中的汉字编码，用以定位该汉字字模的地址
+      if (*(LCD_CHFonts->pTable + (i + 1) * LCD_CHFonts->Sizes + 0) == *pText
+          && *(LCD_CHFonts->pTable + (i + 1) * LCD_CHFonts->Sizes + 1)
+                 == *(pText + 1))
+        {
+          addr = i; // 字模地址偏移
+          break;
+        }
+      i += 2; // 每个中文字符编码占两字节
+
+      if (i >= LCD_CHFonts->Table_Rows)
+        break; // 字模列表中无相应的汉字
+    }
+  i = 0;
+  for (index = 0; index < LCD_CHFonts->Sizes; index++)
+    {
+      disChar = *(LCD_CHFonts->pTable + (addr)*LCD_CHFonts->Sizes
+                  + index); // 获取相应的字模地址
+
+      for (counter = 0; counter < 8; counter++)
+        {
+          if (disChar & 0x01)
+            {
+              LCD_Buff[i] = LCD.Color; // 当前模值不为0时，使用画笔色绘点
+            }
+          else
+            {
+              LCD_Buff[i] = LCD.BackColor; // 否则使用背景色绘制点
+            }
+          i++;
+          disChar >>= 1;
+          Xaddress++; // 水平坐标自加
+
+          if (Xaddress
+              == LCD_CHFonts->Width) //	如果水平坐标达到了字符宽度，则退出当前循环
+            { //	进入下一行的绘制
+              Xaddress = 0;
+              break;
+            }
+        }
+    }
+  LCD_SetAddress (x, y, x + LCD_CHFonts->Width - 1,
+                  y + LCD_CHFonts->Height - 1); // 设置坐标
+  LCD_WriteBuff (LCD_Buff,
+                 LCD_CHFonts->Width * LCD_CHFonts->Height); // 写入显存
+}
+
 /*****************************************************************************************************************************************
  *	函 数 名:	LCD_DisplayText
  *
@@ -704,13 +776,21 @@ void
 LCD_DisplayText (uint16_t x, uint16_t y, char *pText)
 {
 
-  while (*pText != 0)   // 判断是否为空字符
-    if (*pText <= 0x7F) // 判断是否为ASCII码
-      {
-        LCD_DisplayChar (x, y, *pText); // 显示ASCII
-        x += LCD_AsciiFonts->Width;     // 水平坐标调到下一个字符处
-        pText++;                        // 字符串地址+1
-      }
+  while (*pText != 0) // 判断是否为空字符
+    {
+      if (*pText <= 0x7F) // 判断是否为ASCII码
+        {
+          LCD_DisplayChar (x, y, *pText); // 显示ASCII
+          x += LCD_AsciiFonts->Width; // 水平坐标调到下一个字符处
+          pText++;                    // 字符串地址+1
+        }
+      else // 若字符为汉字
+        {
+          LCD_DisplayChinese (x, y, pText); // 显示汉字
+          x += LCD_CHFonts->Width; // 水平坐标调到下一个字符处
+          pText += 2; // 字符串地址+2，汉字的编码要2字节
+        }
+    }
 }
 
 /*****************************************************************************************************************************************
@@ -1054,14 +1134,6 @@ LCD_DrawCircle (uint16_t x, uint16_t y, uint16_t r)
  *
  *****************************************************************************************************************************************/
 
-/**
- * @brief Draw an ellipse with center at (x, y) and radius r1 and r2.
- *
- * @param x : Center x coordinate
- * @param y : Center y coordinate
- * @param r1 : Horizontal radius
- * @param r2 : Vertical radius
- */
 void
 LCD_DrawEllipse (int x, int y, int r1, int r2)
 {

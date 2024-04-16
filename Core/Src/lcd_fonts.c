@@ -1,15 +1,14 @@
 /**
  * @file lcd_fonts.c
  * @author Tiantian Zhong
- * @brief ASCII fonts library of the LCD driver. HEX data are obtained from
- * SimSun through PCtolCD2018 software. This library contains 5 font sizes:
- * 3216, 2412, 2010, 1608, 1206. Method in obtaining Hex data: Inverted,
- * Reverse, Line by Line, C51 format.
+ * @brief ASCII fonts library of the LCD driver. HEX data are obtained from SimSun through PCtolCD2018 software.
+ *        This library contains 5 font sizes: 3216, 2412, 2010, 1608, 1206.
+ *        Method in obtaining Hex data: Inverted, Reverse, Line by Line, C51 format.
  * @version 0.1
  * @date 2024-04-12
- *
+ * 
  * @copyright Copyright (c) 2024
- *
+ * 
  */
 
 #include "lcd_fonts.h"
@@ -2025,8 +2024,7 @@ const uint8_t ASCII_1206_Table[] = {
 };
 
 /* Font Parameters of Each Font Size */
-/* pFONT: <Hex_Array_Address>, <Char_Width>, <Char_Length>, <#_Chars_In_Font>
- * >*/
+/* pFONT: <Hex_Array_Address>, <Char_Width>, <Char_Length>, <#_Chars_In_Font> >*/
 
 pFONT ASCII_Font32 = {
   ASCII_3216_Table, //	字模数组地址
