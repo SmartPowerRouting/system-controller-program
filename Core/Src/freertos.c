@@ -50,21 +50,22 @@
 /* Definitions for os_led_blink */
 osThreadId_t os_led_blinkHandle;
 const osThreadAttr_t os_led_blink_attributes = {
-    .name = "os_led_blink",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "os_led_blink",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for uart1_rx */
 osThreadId_t uart1_rxHandle;
 const osThreadAttr_t uart1_rx_attributes = {
-    .name = "uart1_rx",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityLow,
+  .name = "uart1_rx",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for uart1_rx_msg */
 osMessageQueueId_t uart1_rx_msgHandle;
 const osMessageQueueAttr_t uart1_rx_msg_attributes = {
-    .name = "uart1_rx_msg"};
+  .name = "uart1_rx_msg"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -77,12 +78,11 @@ void uart1_rx_tsk(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -101,7 +101,7 @@ void MX_FREERTOS_Init(void)
 
   /* Create the queue(s) */
   /* creation of uart1_rx_msg */
-  uart1_rx_msgHandle = osMessageQueueNew(16, sizeof(uint8_t), &uart1_rx_msg_attributes);
+  uart1_rx_msgHandle = osMessageQueueNew (2, 255, &uart1_rx_msg_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -121,6 +121,7 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_os_led_blink_tsk */
@@ -134,9 +135,10 @@ void os_led_blink_tsk(void *argument)
 {
   /* USER CODE BEGIN os_led_blink_tsk */
   /* Infinite loop */
-  for (;;)
+  for (int i=0;;i++)
   {
-    osDelay(1);
+    osDelay(1000);
+		HAL_GPIO_TogglePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin);
   }
   /* USER CODE END os_led_blink_tsk */
 }
@@ -155,10 +157,13 @@ void uart1_rx_tsk(void *argument)
   for (;;)
   {
     // read msg queue and if success, print data
-    uint8_t data[255] = {'\0'};
-    if (osMessageQueueGet(uart1_rx_msgHandle, &data, NULL, 100) == osOK)
+    uint8_t data2[255] = {'\0'};
+		osDelay(200);
+		osStatus_t status;
+		status = osMessageQueueGet(uart1_rx_msgHandle, &data2, NULL, 100);
+    if (status == osOK)
     {
-      printf(">>> MsgQueue Received: %s\n", data);
+      printf(">>> MsgQueue Received: %s\n", data2);
     }
   }
   /* USER CODE END uart1_rx_tsk */
@@ -168,3 +173,4 @@ void uart1_rx_tsk(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+
