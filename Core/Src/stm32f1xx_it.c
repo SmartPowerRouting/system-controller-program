@@ -242,7 +242,7 @@ void USART1_IRQHandler(void)
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
     osMessageQueuePut(uart1_rx_msgHandle, &uart1_rx_data, 0, 0);
-    printf(">> UART1 Received: %s\n", uart1_rx_data);
+    printf(">> UART1 Received: %s\r\n", uart1_rx_data);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
   }
   /* USER CODE END USART1_IRQn 0 */

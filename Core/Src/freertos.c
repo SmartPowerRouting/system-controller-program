@@ -203,8 +203,11 @@ void adc_display_tsk(void *argument)
 			result += adc_data[i];
 		}
 		result /= 3;
+		taskENTER_CRITICAL();
 		LCD_DisplayNumber(50,50,result,10);
-		osDelay(100);
+		printf("**> ADC Value: %d (see it)\r\n", result);
+		taskEXIT_CRITICAL();
+		osDelay(2000);
   }
   /* USER CODE END adc_display_tsk */
 }
