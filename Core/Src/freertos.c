@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "adc.h"
 #include "printf.h"
+#include "lcd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +47,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+extern uint32_t adc_data[30];
 /* USER CODE END Variables */
 /* Definitions for os_led_blink */
 osThreadId_t os_led_blinkHandle;
@@ -61,6 +63,13 @@ const osThreadAttr_t uart1_rx_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for adc_display */
+osThreadId_t adc_displayHandle;
+const osThreadAttr_t adc_display_attributes = {
+  .name = "adc_display",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for uart1_rx_msg */
 osMessageQueueId_t uart1_rx_msgHandle;
 const osMessageQueueAttr_t uart1_rx_msg_attributes = {
@@ -74,6 +83,7 @@ const osMessageQueueAttr_t uart1_rx_msg_attributes = {
 
 void os_led_blink_tsk(void *argument);
 void uart1_rx_tsk(void *argument);
+void adc_display_tsk(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -113,6 +123,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of uart1_rx */
   uart1_rxHandle = osThreadNew(uart1_rx_tsk, NULL, &uart1_rx_attributes);
+
+  /* creation of adc_display */
+  adc_displayHandle = osThreadNew(adc_display_tsk, NULL, &adc_display_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -167,6 +180,33 @@ void uart1_rx_tsk(void *argument)
     }
   }
   /* USER CODE END uart1_rx_tsk */
+}
+
+/* USER CODE BEGIN Header_adc_display_tsk */
+/**
+* @brief Function implementing the adc_display thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_adc_display_tsk */
+void adc_display_tsk(void *argument)
+{
+  /* USER CODE BEGIN adc_display_tsk */
+  /* Infinite loop */
+  for(;;)
+  {
+	  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) &adc_data, 30);
+		osDelay(10);
+		int result = 0;
+    for (int i = 0; i < 30; i++)
+		{
+			result += adc_data[i];
+		}
+		result /= 3;
+		LCD_DisplayNumber(50,50,result,10);
+		osDelay(100);
+  }
+  /* USER CODE END adc_display_tsk */
 }
 
 /* Private application code --------------------------------------------------*/

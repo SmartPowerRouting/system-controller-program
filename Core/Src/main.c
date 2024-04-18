@@ -53,6 +53,7 @@
 volatile uint8_t uart1_rx_data[255];
 volatile uint8_t uart1_rx_data_len;
 volatile uint8_t uart1_rx_flag;
+volatile uint32_t adc_data[30];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,6 +109,10 @@ int main(void)
 
   // Now turn on LCD backlight
   LCD_Backlight_ON;
+	LCD_SetBackColor(LCD_WHITE);
+	LCD_SetColor(LCD_BLACK);
+	LCD_SetAsciiFont(&ASCII_Font12);
+	LCD_Clear();
 
   HAL_GPIO_WritePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(BKUP_STAT_GPIO_Port, BKUP_STAT_Pin, GPIO_PIN_SET);
