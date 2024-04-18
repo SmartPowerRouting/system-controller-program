@@ -49,7 +49,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t uart1_rx_data[255];
+uint8_t uart1_rx_data_len;
+uint8_t uart1_rx_flag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,6 +112,10 @@ int main(void)
   HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
 	
+	// Enable UART DMA reception
+	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
+	
 	// enable PWM output
 	uint16_t pwmDutyRatio = 0;
 	uint8_t dir = 1;
@@ -122,7 +128,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
     {
-      HAL_UART_Transmit_DMA (&huart1, (uint8_t*) "Hello World!\r\n", 14);
+      HAL_UART_Transmit(&huart1, (uint8_t*) "Hello World!\r\n", 14, 0xFF);
       uint8_t i = 0;
 
       LCD_SetTextFont (&ASCII_Font24);
@@ -130,7 +136,7 @@ int main(void)
 
       for (i = 0; i < 8; i++)
         {
-          HAL_UART_Transmit_DMA (&huart1, (uint8_t*) "Hello World!\r\n", 14);
+          HAL_UART_Transmit(&huart1, (uint8_t*) "Hello World!\r\n", 14, 0xFF);
           switch (i)
             {
             case 0:

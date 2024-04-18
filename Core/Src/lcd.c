@@ -15,7 +15,7 @@
  */
 
 #include "lcd.h"
-#include "spi.h"
+#include "printf.h"
 
 #define LCD_SPI hspi1         // Define the SPI handler for LCD
 static pFONT *LCD_AsciiFonts; // Define the ASCII font

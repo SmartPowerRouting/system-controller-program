@@ -22,6 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "printf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,15 +58,15 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
-extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN EV */
-
+extern uint8_t uart1_rx_data[255];
+extern uint8_t uart1_rx_data_len;
+extern uint8_t uart1_rx_flag;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -221,20 +222,6 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA1 channel4 global interrupt.
-  */
-void DMA1_Channel4_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_tx);
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel4_IRQn 1 */
-}
-
-/**
   * @brief This function handles DMA1 channel5 global interrupt.
   */
 void DMA1_Channel5_IRQHandler(void)
@@ -263,20 +250,6 @@ void DMA1_Channel6_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA1 channel7 global interrupt.
-  */
-void DMA1_Channel7_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel7_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  /* USER CODE BEGIN DMA1_Channel7_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel7_IRQn 1 */
-}
-
-/**
   * @brief This function handles TIM1 update interrupt.
   */
 void TIM1_UP_IRQHandler(void)
@@ -300,7 +273,19 @@ void USART1_IRQHandler(void)
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
-
+  uint8_t tmp_flag = __HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE);
+  if ((tmp_flag != RESET) && (__HAL_UART_GET_IT_SOURCE(&huart1, UART_IT_IDLE) != RESET))
+  {
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+    HAL_UART_DMAStop(&huart1);
+    uint32_t tmp_len = huart1.RxXferSize - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
+    uart1_rx_data_len = tmp_len;
+    uart1_rx_flag = 1;
+		uart1_rx_data[uart1_rx_data_len] = '\0';
+		printf("%s\n", uart1_rx_data);
+    //HAL_UART_Transmit(&huart1, uart1_rx_data, uart1_rx_data_len, 1000);  // echo
+    HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
+  }
   /* USER CODE END USART1_IRQn 1 */
 }
 
