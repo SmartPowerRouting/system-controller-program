@@ -30,6 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "spi.h"
+#include "printf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,10 +51,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-volatile uint8_t uart1_rx_data[255];
-volatile uint8_t uart1_rx_data_len;
-volatile uint8_t uart1_rx_flag;
-volatile uint32_t adc_data[30];
+uint8_t uart1_rx_data[255];
+uint8_t uart1_rx_data_len;
+uint8_t uart1_rx_flag;
+uint32_t adc_data[30];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,7 +123,7 @@ int main(void)
 	// Enable UART DMA reception
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
-	
+
 	// enable PWM output
 	uint16_t pwmDutyRatio = 0;
 	uint8_t dir = 1;
@@ -144,52 +145,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	LCD_SetBackColor(LCD_WHITE);
+	LCD_SetColor(LCD_BLACK);
+	LCD_SetAsciiFont(&ASCII_Font12);
+	LCD_Clear();
+	LCD_DisplayString(100, 100, "OS Unexpectedly Stopped");
+	printf("OS Unexpectedly Stopped\r\n");
   while (1)
-    {
-      HAL_UART_Transmit(&huart1, (uint8_t*) "Hello World!\r\n", 14, 0xFF);
-      uint8_t i = 0;
-
-      LCD_SetTextFont (&ASCII_Font24);
-      LCD_SetColor (LCD_BLACK);
-
-      for (i = 0; i < 8; i++)
-        {
-          HAL_UART_Transmit(&huart1, (uint8_t*) "Hello World!\r\n", 14, 0xFF);
-          switch (i)
-            {
-            case 0:
-              LCD_SetBackColor (LIGHT_RED);
-              break;
-            case 1:
-              LCD_SetBackColor (LIGHT_GREEN);
-              break;
-            case 2:
-              LCD_SetBackColor (LIGHT_BLUE);
-              break;
-            case 3:
-              LCD_SetBackColor (LIGHT_YELLOW);
-              break;
-            case 4:
-              LCD_SetBackColor (LIGHT_CYAN);
-              break;
-            case 5:
-              LCD_SetBackColor (LIGHT_GREY);
-              break;
-            case 6:
-              LCD_SetBackColor (LIGHT_MAGENTA);
-              break;
-            case 7:
-              LCD_SetBackColor (LCD_WHITE);
-              break;
-            default:
-              break;
-            }
-          LCD_Clear (); // ÇåÆÁ
-          LCD_DisplayText (13, 70, "STM32F1 Flash Scrn");
-          LCD_DisplayText (13, 106, "Resolution: 240*320");
-          LCD_DisplayText (13, 142, "Ctrller: ST7789");
-          HAL_Delay (1000); // ÑÓÊ±
-        }
+		{
+			// do nothing
     }
     /* USER CODE END WHILE */
 
