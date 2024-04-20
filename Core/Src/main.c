@@ -1,32 +1,36 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "adc.h"
 #include "dma.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "lcd.h"
+#include "spi.h"
+#include "printf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,11 +51,20 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+uint8_t uart1_rx_data[255]; // UART1 DMA buffer
+uint8_t uart1_rx_data_len; // length of message received from UART1 in DMA buffer
+uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
 
+uint8_t uart2_rx_data[255]; // UART2 DMA buffer
+uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
+uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
+
+uint32_t adc_data[6]; // We have six channels enabled
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -95,18 +108,67 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_SPI1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  // LCD initialization
+  SPI_LCD_Init ();
+
+  // Now turn on LCD backlight
+  LCD_Backlight_ON;
+	LCD_SetBackColor(LCD_WHITE);
+	LCD_SetColor(LCD_BLACK);
+	LCD_SetAsciiFont(&ASCII_Font12);
+	LCD_Clear();
+
+  HAL_GPIO_WritePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(BKUP_STAT_GPIO_Port, BKUP_STAT_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
+	
+	// Enable UART DMA reception
+	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
+
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
+
+	// enable PWM output
+	uint16_t pwmDutyRatio = 0;
+	uint8_t dir = 1;
+	
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+
+  HAL_UART_Transmit(&huart2, (uint8_t *)"AT+MQTTCONN?\r\n", 14, 1000);
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	LCD_SetBackColor(LCD_WHITE);
+	LCD_SetColor(LCD_BLACK);
+	LCD_SetAsciiFont(&ASCII_Font12);
+	LCD_Clear();
+	LCD_DisplayString(100, 100, "OS Unexpectedly Stopped");
+	printf("OS Unexpectedly Stopped\r\n");
   while (1)
-  {
+		{
+			// do nothing
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+
   /* USER CODE END 3 */
 }
 
@@ -188,11 +250,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
+  /* User can add his own implementation to report the HAL error return state
+   */
+  __disable_irq ();
   while (1)
-  {
-  }
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -207,8 +270,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* User can add his own implementation to report the file name and line
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+     line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

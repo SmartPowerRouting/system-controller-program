@@ -1,27 +1,27 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    spi.c
-  * @brief   This file provides code for the configuration
-  *          of the SPI instances.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    spi.c
+ * @brief   This file provides code for the configuration
+ *          of the SPI instances.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "spi.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "lcd.h"
 /* USER CODE END 0 */
 
 SPI_HandleTypeDef hspi1;
@@ -31,7 +31,9 @@ void MX_SPI1_Init(void)
 {
 
   /* USER CODE BEGIN SPI1_Init 0 */
-
+  LCD_DC_Data;       // Set LCD default mode to data write
+  LCD_CS_H;          // Deselect LCD driver IC to perhibit communication
+  LCD_Backlight_OFF; // Turn off backlight before initialization
   /* USER CODE END SPI1_Init 0 */
 
   /* USER CODE BEGIN SPI1_Init 1 */
@@ -54,6 +56,15 @@ void MX_SPI1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SPI1_Init 2 */
+  HAL_Delay (50);
+  __HAL_SPI_ENABLE (&hspi1); // Enable SPI Manually
+  SPI_1LINE_TX (&hspi1);     // Configure SPI to 1-line TX
+
+  // Wait for at least 5ms before sending further commands
+  HAL_Delay (50);
+
+  // Enable LCD Driver to allow communication
+  LCD_CS_L;
 
   /* USER CODE END SPI1_Init 2 */
 
