@@ -69,7 +69,12 @@ extern uint8_t uart1_rx_data[255];
 extern uint8_t uart1_rx_data_len;
 extern uint8_t uart1_rx_flag;
 
+extern uint8_t uart2_rx_data[255];
+extern uint8_t uart2_rx_data_len;
+extern uint8_t uart2_rx_flag;
+
 extern osMessageQueueId_t uart1_rx_msgHandle;
+extern osMessageQueueId_t uart2_rx_msgHandle;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -242,7 +247,7 @@ void USART1_IRQHandler(void)
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
     osMessageQueuePut(uart1_rx_msgHandle, &uart1_rx_data, 0, 0);
-    printf(">> UART1 Received: %s\r\n", uart1_rx_data);
+    printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
   }
   /* USER CODE END USART1_IRQn 0 */
@@ -258,7 +263,19 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-
+  uint8_t tmp_flag = __HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE);
+  if ((tmp_flag != RESET) && (__HAL_UART_GET_IT_SOURCE(&huart2, UART_IT_IDLE) != RESET))
+  {
+    __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+    HAL_UART_DMAStop(&huart2);
+    uint32_t tmp_len = huart2.RxXferSize - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
+    uart2_rx_data_len = tmp_len;
+    uart2_rx_flag = 1;
+    uart2_rx_data[uart2_rx_data_len] = '\0';
+    osMessageQueuePut(uart2_rx_msgHandle, &uart2_rx_data, 0, 0);
+    printf(">> UART2 Received: \r\n%s\r\n", uart2_rx_data);
+    HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
+  }
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */

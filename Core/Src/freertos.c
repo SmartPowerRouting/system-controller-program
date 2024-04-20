@@ -72,47 +72,56 @@ extern uint32_t adc_data[30];
 /* Definitions for os_led_blink */
 osThreadId_t os_led_blinkHandle;
 const osThreadAttr_t os_led_blink_attributes = {
-    .name = "os_led_blink",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "os_led_blink",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for uart1_rx */
 osThreadId_t uart1_rxHandle;
 const osThreadAttr_t uart1_rx_attributes = {
-    .name = "uart1_rx",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "uart1_rx",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for adc_pwr_mnt */
 osThreadId_t adc_pwr_mntHandle;
 const osThreadAttr_t adc_pwr_mnt_attributes = {
-    .name = "adc_pwr_mnt",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityLow,
+  .name = "adc_pwr_mnt",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for adc_display */
 osThreadId_t adc_displayHandle;
 const osThreadAttr_t adc_display_attributes = {
-    .name = "adc_display",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityLow,
+  .name = "adc_display",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for uart1_rx_msg */
 osMessageQueueId_t uart1_rx_msgHandle;
 const osMessageQueueAttr_t uart1_rx_msg_attributes = {
-    .name = "uart1_rx_msg"};
+  .name = "uart1_rx_msg"
+};
 /* Definitions for pwrmmc_queue */
 osMessageQueueId_t pwrmmc_queueHandle;
 const osMessageQueueAttr_t pwrmmc_queue_attributes = {
-    .name = "pwrmmc_queue"};
+  .name = "pwrmmc_queue"
+};
 /* Definitions for pwrbkup_queue */
 osMessageQueueId_t pwrbkup_queueHandle;
 const osMessageQueueAttr_t pwrbkup_queue_attributes = {
-    .name = "pwrbkup_queue"};
+  .name = "pwrbkup_queue"
+};
 /* Definitions for pwrout_queue */
 osMessageQueueId_t pwrout_queueHandle;
 const osMessageQueueAttr_t pwrout_queue_attributes = {
-    .name = "pwrout_queue"};
+  .name = "pwrout_queue"
+};
+/* Definitions for uart2_rx_msg */
+osMessageQueueId_t uart2_rx_msgHandle;
+const osMessageQueueAttr_t uart2_rx_msg_attributes = {
+  .name = "uart2_rx_msg"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -127,12 +136,11 @@ void adc_display_tsk(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -151,16 +159,19 @@ void MX_FREERTOS_Init(void)
 
   /* Create the queue(s) */
   /* creation of uart1_rx_msg */
-  uart1_rx_msgHandle = osMessageQueueNew(2, 255, &uart1_rx_msg_attributes);
+  uart1_rx_msgHandle = osMessageQueueNew (2, 255, &uart1_rx_msg_attributes);
 
   /* creation of pwrmmc_queue */
-  pwrmmc_queueHandle = osMessageQueueNew(20, 8, &pwrmmc_queue_attributes);
+  pwrmmc_queueHandle = osMessageQueueNew (20, 8, &pwrmmc_queue_attributes);
 
   /* creation of pwrbkup_queue */
-  pwrbkup_queueHandle = osMessageQueueNew(20, 8, &pwrbkup_queue_attributes);
+  pwrbkup_queueHandle = osMessageQueueNew (20, 8, &pwrbkup_queue_attributes);
 
   /* creation of pwrout_queue */
-  pwrout_queueHandle = osMessageQueueNew(20, 8, &pwrout_queue_attributes);
+  pwrout_queueHandle = osMessageQueueNew (20, 8, &pwrout_queue_attributes);
+
+  /* creation of uart2_rx_msg */
+  uart2_rx_msgHandle = osMessageQueueNew (5, 255, &uart2_rx_msg_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -186,6 +197,7 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_os_led_blink_tsk */
@@ -280,26 +292,10 @@ void adc_pwr_mnt_tsk(void *argument)
     pwrData.mmc.power = pwrData.mmc.voltage * pwrData.mmc.current;
     pwrData.bkup.power = pwrData.bkup.voltage * pwrData.bkup.current;
     pwrData.out.power = pwrData.out.voltage * pwrData.out.current;
-    // osMessageQueuePut(pwrmmc_queueHandle, &pwrData, 0, 0);
-    // printf("ADC MMC: V=%d, I=%d, P=%d\r\n", pwrData.mmc.voltage, pwrData.mmc.current, pwrData.mmc.power);
-    // printf("ADC BKUP: V=%d, I=%d, P=%d\r\n", pwrData.bkup.voltage, pwrData.bkup.current, pwrData.bkup.power);
-    // printf("ADC OUT: V=%d, I=%d, P=%d\r\n\r\n", pwrData.out.voltage, pwrData.out.current, pwrData.out.power);
-    // LCD_DisplayNumber(100,100,pwrData.mmc.voltage, 5);
-    LCD_DisplayString(40, 120, "MMC Voltage");
-    LCD_DisplayString(40, 140, "BKUP Voltage");
-    LCD_DisplayString(40, 160, "OUT Voltage");
-    LCD_DisplayString(40, 180, "MMC Current");
-    LCD_DisplayString(40, 200, "BKUP Current");
-    LCD_DisplayString(40, 220, "OUT Current");
-    LCD_DisplayNumber(180, 120, pwrData.mmc.voltage, 5);
-    LCD_DisplayNumber(180, 140, pwrData.bkup.voltage, 5);
-    LCD_DisplayNumber(180, 160, pwrData.out.voltage, 5);
-    LCD_DisplayNumber(180, 180, pwrData.mmc.current, 5);
-    LCD_DisplayNumber(180, 200, pwrData.bkup.current, 5);
-    LCD_DisplayNumber(180, 220, pwrData.out.current, 5);
+
+    osMessageQueuePut(pwrmmc_queueHandle, &pwrData, 0, 0);
   }
-  osDelay(500);
-/* USER CODE END adc_pwr_mnt_tsk */
+  /* USER CODE END adc_pwr_mnt_tsk */
 }
 
 /* USER CODE BEGIN Header_adc_display_tsk */
@@ -342,3 +338,4 @@ void adc_display_tsk(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+

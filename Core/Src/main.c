@@ -54,6 +54,11 @@
 uint8_t uart1_rx_data[255]; // UART1 DMA buffer
 uint8_t uart1_rx_data_len; // length of message received from UART1 in DMA buffer
 uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
+
+uint8_t uart2_rx_data[255]; // UART2 DMA buffer
+uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
+uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
+
 uint32_t adc_data[6]; // We have six channels enabled
 /* USER CODE END PV */
 
@@ -124,11 +129,16 @@ int main(void)
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
 
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
+
 	// enable PWM output
 	uint16_t pwmDutyRatio = 0;
 	uint8_t dir = 1;
 	
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+
+  HAL_UART_Transmit(&huart2, (uint8_t *)"AT+MQTTCONN?\r\n", 14, 1000);
 
   /* USER CODE END 2 */
 
