@@ -51,10 +51,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t uart1_rx_data[255];
-uint8_t uart1_rx_data_len;
-uint8_t uart1_rx_flag;
-uint32_t adc_data[30];
+uint8_t uart1_rx_data[255]; // UART1 DMA buffer
+uint8_t uart1_rx_data_len; // length of message received from UART1 in DMA buffer
+uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
+uint32_t adc_data[6]; // We have six channels enabled
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
