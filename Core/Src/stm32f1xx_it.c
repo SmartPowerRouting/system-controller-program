@@ -22,6 +22,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 #include "printf.h"
 #include "cmsis_os2.h"
 /* USER CODE END Includes */
@@ -73,8 +74,14 @@ extern uint8_t uart2_rx_data[255];
 extern uint8_t uart2_rx_data_len;
 extern uint8_t uart2_rx_flag;
 
-extern osMessageQueueId_t uart1_rx_msgHandle;
-extern osMessageQueueId_t uart2_rx_msgHandle;
+extern osMessageQueueId_t esp_rx_queueHandle;
+extern osMessageQueueId_t sys_pwr_queueHandle;
+extern osMessageQueueId_t esp_tx_queueHandle;
+extern osMessageQueueId_t uart1_rx_queueHandle;
+
+extern uint32_t adc1_data[3]; // Two ADCs, three channels each
+extern uint32_t adc2_data[3];
+
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -246,8 +253,9 @@ void USART1_IRQHandler(void)
     uart1_rx_data_len = tmp_len;
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
-    osMessageQueuePut(uart1_rx_msgHandle, &uart1_rx_data, 0, 0);
     printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
+    // Allow users to transmit AT instructions to ESP8266 through UART1
+    osMessageQueuePut(uart1_rx_queueHandle, &uart1_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
   }
   /* USER CODE END USART1_IRQn 0 */
@@ -270,10 +278,9 @@ void USART2_IRQHandler(void)
     HAL_UART_DMAStop(&huart2);
     uint32_t tmp_len = huart2.RxXferSize - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
     uart2_rx_data_len = tmp_len;
-    uart2_rx_flag = 1;
     uart2_rx_data[uart2_rx_data_len] = '\0';
-    osMessageQueuePut(uart2_rx_msgHandle, &uart2_rx_data, 0, 0);
-    printf(">> UART2 Received: \r\n%s\r\n", uart2_rx_data);
+    uart2_rx_flag = 1;
+    osMessageQueuePut(esp_rx_queueHandle, &uart2_rx_data, 0, 0);  // faster than printf
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */

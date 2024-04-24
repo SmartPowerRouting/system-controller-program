@@ -59,7 +59,8 @@ uint8_t uart2_rx_data[255]; // UART2 DMA buffer
 uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
 uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
 
-uint32_t adc_data[6]; // We have six channels enabled
+uint32_t adc1_data[3]; // Two ADCs, three channels each
+uint32_t adc2_data[3];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -109,6 +110,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
+  MX_ADC2_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // LCD initialization
   SPI_LCD_Init ();
@@ -117,14 +120,10 @@ int main(void)
   LCD_Backlight_ON;
 	LCD_SetBackColor(LCD_WHITE);
 	LCD_SetColor(LCD_BLACK);
-	LCD_SetAsciiFont(&ASCII_Font12);
+	LCD_SetAsciiFont(&ASCII_Font32);
 	LCD_Clear();
+  LCD_DisplayString(80, 80, "OS Started");
 
-  HAL_GPIO_WritePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(BKUP_STAT_GPIO_Port, BKUP_STAT_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-	
 	// Enable UART DMA reception
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
@@ -132,13 +131,8 @@ int main(void)
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
-	// enable PWM output
-	uint16_t pwmDutyRatio = 0;
-	uint8_t dir = 1;
-	
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
-  HAL_UART_Transmit(&huart2, (uint8_t *)"AT+MQTTCONN?\r\n", 14, 1000);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
   /* USER CODE END 2 */
 
@@ -161,6 +155,7 @@ int main(void)
 	LCD_Clear();
 	LCD_DisplayString(100, 100, "OS Unexpectedly Stopped");
 	printf("OS Unexpectedly Stopped\r\n");
+  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
   while (1)
 		{
 			// do nothing

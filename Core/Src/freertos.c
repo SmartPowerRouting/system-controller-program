@@ -28,6 +28,7 @@
 #include "adc.h"
 #include "printf.h"
 #include "lcd.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +52,7 @@ typedef struct
   pwrData_t mmc;
   pwrData_t bkup;
   pwrData_t out;
-} pwrDataQueue_t;
+} sysPwrDataQueue_t;
 
 /* USER CODE END PTD */
 
@@ -72,56 +73,88 @@ extern uint32_t adc_data[30];
 /* Definitions for os_led_blink */
 osThreadId_t os_led_blinkHandle;
 const osThreadAttr_t os_led_blink_attributes = {
-  .name = "os_led_blink",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "os_led_blink",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
-/* Definitions for uart1_rx */
-osThreadId_t uart1_rxHandle;
-const osThreadAttr_t uart1_rx_attributes = {
-  .name = "uart1_rx",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+/* Definitions for esp_msg */
+osThreadId_t esp_msgHandle;
+const osThreadAttr_t esp_msg_attributes = {
+    .name = "esp_msg",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
-/* Definitions for adc_pwr_mnt */
-osThreadId_t adc_pwr_mntHandle;
-const osThreadAttr_t adc_pwr_mnt_attributes = {
-  .name = "adc_pwr_mnt",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+/* Definitions for esp_conn */
+osThreadId_t esp_connHandle;
+const osThreadAttr_t esp_conn_attributes = {
+    .name = "esp_conn",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
-/* Definitions for adc_display */
-osThreadId_t adc_displayHandle;
-const osThreadAttr_t adc_display_attributes = {
-  .name = "adc_display",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+/* Definitions for pwr_monitor */
+osThreadId_t pwr_monitorHandle;
+const osThreadAttr_t pwr_monitor_attributes = {
+    .name = "pwr_monitor",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityLow,
 };
-/* Definitions for uart1_rx_msg */
-osMessageQueueId_t uart1_rx_msgHandle;
-const osMessageQueueAttr_t uart1_rx_msg_attributes = {
-  .name = "uart1_rx_msg"
+/* Definitions for dcdc_ctrl */
+osThreadId_t dcdc_ctrlHandle;
+const osThreadAttr_t dcdc_ctrl_attributes = {
+    .name = "dcdc_ctrl",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityLow,
 };
-/* Definitions for pwrmmc_queue */
-osMessageQueueId_t pwrmmc_queueHandle;
-const osMessageQueueAttr_t pwrmmc_queue_attributes = {
-  .name = "pwrmmc_queue"
+/* Definitions for adc_handler */
+osThreadId_t adc_handlerHandle;
+const osThreadAttr_t adc_handler_attributes = {
+    .name = "adc_handler",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityLow,
 };
-/* Definitions for pwrbkup_queue */
-osMessageQueueId_t pwrbkup_queueHandle;
-const osMessageQueueAttr_t pwrbkup_queue_attributes = {
-  .name = "pwrbkup_queue"
+/* Definitions for esp_redir */
+osThreadId_t esp_redirHandle;
+const osThreadAttr_t esp_redir_attributes = {
+    .name = "esp_redir",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityLow,
 };
-/* Definitions for pwrout_queue */
-osMessageQueueId_t pwrout_queueHandle;
-const osMessageQueueAttr_t pwrout_queue_attributes = {
-  .name = "pwrout_queue"
-};
-/* Definitions for uart2_rx_msg */
-osMessageQueueId_t uart2_rx_msgHandle;
-const osMessageQueueAttr_t uart2_rx_msg_attributes = {
-  .name = "uart2_rx_msg"
-};
+/* Definitions for esp_rx_queue */
+osMessageQueueId_t esp_rx_queueHandle;
+const osMessageQueueAttr_t esp_rx_queue_attributes = {
+    .name = "esp_rx_queue"};
+/* Definitions for esp_response_queue */
+osMessageQueueId_t esp_response_queueHandle;
+const osMessageQueueAttr_t esp_response_queue_attributes = {
+    .name = "esp_response_queue"};
+/* Definitions for usr_voltage_queue */
+osMessageQueueId_t usr_voltage_queueHandle;
+const osMessageQueueAttr_t usr_voltage_queue_attributes = {
+    .name = "usr_voltage_queue"};
+/* Definitions for pwr_cmd_queue */
+osMessageQueueId_t pwr_cmd_queueHandle;
+const osMessageQueueAttr_t pwr_cmd_queue_attributes = {
+    .name = "pwr_cmd_queue"};
+/* Definitions for sys_pwr_queue */
+osMessageQueueId_t sys_pwr_queueHandle;
+const osMessageQueueAttr_t sys_pwr_queue_attributes = {
+    .name = "sys_pwr_queue"};
+/* Definitions for dcdc_pwr_queue */
+osMessageQueueId_t dcdc_pwr_queueHandle;
+const osMessageQueueAttr_t dcdc_pwr_queue_attributes = {
+    .name = "dcdc_pwr_queue"};
+/* Definitions for esp_tx_queue */
+osMessageQueueId_t esp_tx_queueHandle;
+const osMessageQueueAttr_t esp_tx_queue_attributes = {
+    .name = "esp_tx_queue"};
+/* Definitions for pwrSelCmd_queue */
+osMessageQueueId_t pwrSelCmd_queueHandle;
+const osMessageQueueAttr_t pwrSelCmd_queue_attributes = {
+    .name = "pwrSelCmd_queue"};
+/* Definitions for uart1_rx_queue */
+osMessageQueueId_t uart1_rx_queueHandle;
+const osMessageQueueAttr_t uart1_rx_queue_attributes = {
+    .name = "uart1_rx_queue"};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -129,18 +162,22 @@ const osMessageQueueAttr_t uart2_rx_msg_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void os_led_blink_tsk(void *argument);
-void uart1_rx_tsk(void *argument);
-void adc_pwr_mnt_tsk(void *argument);
-void adc_display_tsk(void *argument);
+void esp_msg_tsk(void *argument);
+void esp_conn_tsk(void *argument);
+void pwr_monitor_tsk(void *argument);
+void dcdc_ctrl_tsk(void *argument);
+void adc_handler_tsk(void *argument);
+void esp_redir_tsk(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -158,20 +195,32 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
-  /* creation of uart1_rx_msg */
-  uart1_rx_msgHandle = osMessageQueueNew (2, 255, &uart1_rx_msg_attributes);
+  /* creation of esp_rx_queue */
+  esp_rx_queueHandle = osMessageQueueNew(6, 255, &esp_rx_queue_attributes);
 
-  /* creation of pwrmmc_queue */
-  pwrmmc_queueHandle = osMessageQueueNew (20, 8, &pwrmmc_queue_attributes);
+  /* creation of esp_response_queue */
+  esp_response_queueHandle = osMessageQueueNew(5, 255, &esp_response_queue_attributes);
 
-  /* creation of pwrbkup_queue */
-  pwrbkup_queueHandle = osMessageQueueNew (20, 8, &pwrbkup_queue_attributes);
+  /* creation of usr_voltage_queue */
+  usr_voltage_queueHandle = osMessageQueueNew(1, sizeof(uint16_t), &usr_voltage_queue_attributes);
 
-  /* creation of pwrout_queue */
-  pwrout_queueHandle = osMessageQueueNew (20, 8, &pwrout_queue_attributes);
+  /* creation of pwr_cmd_queue */
+  pwr_cmd_queueHandle = osMessageQueueNew(5, 2, &pwr_cmd_queue_attributes);
 
-  /* creation of uart2_rx_msg */
-  uart2_rx_msgHandle = osMessageQueueNew (5, 255, &uart2_rx_msg_attributes);
+  /* creation of sys_pwr_queue */
+  sys_pwr_queueHandle = osMessageQueueNew(2, 18, &sys_pwr_queue_attributes);
+
+  /* creation of dcdc_pwr_queue */
+  dcdc_pwr_queueHandle = osMessageQueueNew(2, 2, &dcdc_pwr_queue_attributes);
+
+  /* creation of esp_tx_queue */
+  esp_tx_queueHandle = osMessageQueueNew(5, 255, &esp_tx_queue_attributes);
+
+  /* creation of pwrSelCmd_queue */
+  pwrSelCmd_queueHandle = osMessageQueueNew(2, 1, &pwrSelCmd_queue_attributes);
+
+  /* creation of uart1_rx_queue */
+  uart1_rx_queueHandle = osMessageQueueNew(2, 255, &uart1_rx_queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -181,14 +230,23 @@ void MX_FREERTOS_Init(void) {
   /* creation of os_led_blink */
   os_led_blinkHandle = osThreadNew(os_led_blink_tsk, NULL, &os_led_blink_attributes);
 
-  /* creation of uart1_rx */
-  uart1_rxHandle = osThreadNew(uart1_rx_tsk, NULL, &uart1_rx_attributes);
+  /* creation of esp_msg */
+  esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
 
-  /* creation of adc_pwr_mnt */
-  adc_pwr_mntHandle = osThreadNew(adc_pwr_mnt_tsk, NULL, &adc_pwr_mnt_attributes);
+  /* creation of esp_conn */
+  esp_connHandle = osThreadNew(esp_conn_tsk, NULL, &esp_conn_attributes);
 
-  /* creation of adc_display */
-  adc_displayHandle = osThreadNew(adc_display_tsk, NULL, &adc_display_attributes);
+  /* creation of pwr_monitor */
+  pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
+
+  /* creation of dcdc_ctrl */
+  dcdc_ctrlHandle = osThreadNew(dcdc_ctrl_tsk, NULL, &dcdc_ctrl_attributes);
+
+  /* creation of adc_handler */
+  adc_handlerHandle = osThreadNew(adc_handler_tsk, NULL, &adc_handler_attributes);
+
+  /* creation of esp_redir */
+  esp_redirHandle = osThreadNew(esp_redir_tsk, NULL, &esp_redir_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -197,7 +255,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-
 }
 
 /* USER CODE BEGIN Header_os_led_blink_tsk */
@@ -210,132 +267,137 @@ void MX_FREERTOS_Init(void) {
 void os_led_blink_tsk(void *argument)
 {
   /* USER CODE BEGIN os_led_blink_tsk */
+
   /* Infinite loop */
-  for (int i = 0;; i++)
+  for (;;)
   {
-    osDelay(1000);
-    HAL_GPIO_TogglePin(MMC_STAT_GPIO_Port, MMC_STAT_Pin);
+    osDelay(500);
+    HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
   }
   /* USER CODE END os_led_blink_tsk */
 }
 
-/* USER CODE BEGIN Header_uart1_rx_tsk */
+/* USER CODE BEGIN Header_esp_msg_tsk */
 /**
- * @brief Function implementing the uart1_rx thread.
+ * @brief Function implementing the esp_msg thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_uart1_rx_tsk */
-void uart1_rx_tsk(void *argument)
+/* USER CODE END Header_esp_msg_tsk */
+void esp_msg_tsk(void *argument)
 {
-  /* USER CODE BEGIN uart1_rx_tsk */
+  /* USER CODE BEGIN esp_msg_tsk */
   /* Infinite loop */
   for (;;)
   {
-    // read msg queue and if success, print data
-    uint8_t data2[255] = {'\0'};
-    osDelay(200);
-    osStatus_t status;
-    status = osMessageQueueGet(uart1_rx_msgHandle, &data2, NULL, 100);
-    if (status == osOK)
-    {
-      printf(">>> MsgQueue Received: %s\n", data2);
-    }
+    osDelay(1);
   }
-  /* USER CODE END uart1_rx_tsk */
+  /* USER CODE END esp_msg_tsk */
 }
 
-/* USER CODE BEGIN Header_adc_pwr_mnt_tsk */
+/* USER CODE BEGIN Header_esp_conn_tsk */
 /**
- * @brief Calculate power data from ADC data every 1ms.
+ * @brief Function implementing the esp_conn thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_adc_pwr_mnt_tsk */
-void adc_pwr_mnt_tsk(void *argument)
+/* USER CODE END Header_esp_conn_tsk */
+void esp_conn_tsk(void *argument)
 {
-  /* USER CODE BEGIN adc_pwr_mnt_tsk */
-  /** ADC Channel Config **
-   * IN0: VMMC
-   * IN1: VBKUP
-   * IN2: VOUT
-   * IN3: IMMC
-   * IN4: IBKUP
-   * IN5: IOUT
-   * ******************* */
-  // ADC calibration
-  HAL_ADCEx_Calibration_Start(&hadc1);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_data, 6);
+  /* USER CODE BEGIN esp_conn_tsk */
   /* Infinite loop */
   for (;;)
   {
-    pwrDataQueue_t pwrData;
-    uint32_t tmp[6] = {0};
-    for (int8_t i = 0; i < 10; i++)
-    {
-      for (int8_t i = 0; i < 6; i++)
-        tmp[i] += adc_data[i];
-      
-      osDelay(1);
-    }
-    for (int8_t i = 0; i < 6; i++)
-      adc_data[i] = tmp[i] / 10;
-    // Calculate voltage in mV
-    pwrData.mmc.voltage = adc_data[0] * 3300 / 4095;
-    pwrData.bkup.voltage = adc_data[1] * 3300 / 4095;
-    pwrData.out.voltage = adc_data[2] * 3300 / 4095;
-    // Calculate curren in mA
-    pwrData.mmc.current = adc_data[3] * 3300 / 4095;
-    pwrData.bkup.current = adc_data[4] * 3300 / 4095;
-    pwrData.out.current = adc_data[5] * 3300 / 4095;
-    // Calculate power
-    pwrData.mmc.power = pwrData.mmc.voltage * pwrData.mmc.current;
-    pwrData.bkup.power = pwrData.bkup.voltage * pwrData.bkup.current;
-    pwrData.out.power = pwrData.out.voltage * pwrData.out.current;
-
-    osMessageQueuePut(pwrmmc_queueHandle, &pwrData, 0, 0);
+    osDelay(1);
   }
-  /* USER CODE END adc_pwr_mnt_tsk */
+  /* USER CODE END esp_conn_tsk */
 }
 
-/* USER CODE BEGIN Header_adc_display_tsk */
+/* USER CODE BEGIN Header_pwr_monitor_tsk */
 /**
- * @brief Display ADC data on LCD
+ * @brief Function implementing the pwr_monitor thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_adc_display_tsk */
-void adc_display_tsk(void *argument)
+/* USER CODE END Header_pwr_monitor_tsk */
+void pwr_monitor_tsk(void *argument)
 {
-  /* USER CODE BEGIN adc_display_tsk */
+  /* USER CODE BEGIN pwr_monitor_tsk */
   /* Infinite loop */
   for (;;)
   {
-    pwrDataQueue_t pwrData;
-    if (osMessageQueueGet(pwrmmc_queueHandle, &pwrData, NULL, 0) == osOK)
-    {
-      // LCD_Clear();
-      // LCD_DisplayNumber(100,100,pwrData.mmc.voltage, 5);
-      // LCD_DisplayNumber(100,120,pwrData.mmc.current, 5);
-      // LCD_DisplayNumber(100,140,pwrData.mmc.power, 5);
-      // LCD_DisplayNumber(100,160,pwrData.bkup.voltage, 5);
-      // LCD_DisplayNumber(100,180,pwrData.bkup.current, 5);
-      // LCD_DisplayNumber(100,200,pwrData.bkup.power, 5);
-      // LCD_DisplayNumber(100,220,pwrData.out.voltage, 5);
-      // LCD_DisplayNumber(100,240,pwrData.out.current, 5);
-      // LCD_DisplayNumber(100,260,pwrData.out.power, 5);
+    osDelay(1);
+  }
+  /* USER CODE END pwr_monitor_tsk */
+}
 
-      // // report to console
-      // printf("Queue MMC: V=%d, I=%d, P=%d\r\n", pwrData.mmc.voltage, pwrData.mmc.current, pwrData.mmc.power);
-      // printf("Queue BKUP: V=%d, I=%d, P=%d\r\n", pwrData.bkup.voltage, pwrData.bkup.current, pwrData.bkup.power);
-      // printf("Queue OUT: V=%d, I=%d, P=%d\r\n", pwrData.out.voltage, pwrData.out.current, pwrData.out.power);
+/* USER CODE BEGIN Header_dcdc_ctrl_tsk */
+/**
+ * @brief Function implementing the dcdc_ctrl thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_dcdc_ctrl_tsk */
+void dcdc_ctrl_tsk(void *argument)
+{
+  /* USER CODE BEGIN dcdc_ctrl_tsk */
+  /* Infinite loop */
+  for (;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END dcdc_ctrl_tsk */
+}
+
+/* USER CODE BEGIN Header_adc_handler_tsk */
+/**
+ * @brief Function implementing the adc_handler thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_adc_handler_tsk */
+void adc_handler_tsk(void *argument)
+{
+  /* USER CODE BEGIN adc_handler_tsk */
+  /* Infinite loop */
+  for (;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END adc_handler_tsk */
+}
+
+/* USER CODE BEGIN Header_esp_redir_tsk */
+/**
+ * @brief Redirect ESP8266 response to UART1, and send UART1 commands to ESP8266
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_esp_redir_tsk */
+void esp_redir_tsk(void *argument)
+{
+  /* USER CODE BEGIN esp_redir_tsk */
+  /* Infinite loop */
+  for (;;)
+  {
+    // check uart1 queue
+    if (osMessageQueueGetCount(uart1_rx_queueHandle) > 0)
+    {
+      uint8_t data[255];
+      osMessageQueueGet(uart1_rx_queueHandle, &data, NULL, 0);
+      HAL_UART_Transmit(&huart2, data, strlen(data), 100);
+    }
+    if (osMessageQueueGetCount(esp_rx_queueHandle) > 0)
+    {
+      uint8_t data[255];
+      osMessageQueueGet(esp_rx_queueHandle, &data, NULL, 0);
+      printf(">> ESP8266 Sent: \r\n%s\r\n", data);
     }
   }
-  /* USER CODE END adc_display_tsk */
+  /* USER CODE END esp_redir_tsk */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-
