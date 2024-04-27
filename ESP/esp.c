@@ -10,6 +10,9 @@
  */
 
 #include "esp.h"
+#include "lcd.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 uint8_t esp_response[255] = "\0";
 
@@ -41,6 +44,7 @@ const char* WIFI_PWD = "WindPwr666";
 
 // Msg queues
 extern osMessageQueueId_t esp_response_queueHandle;
+extern osMessageQueueId_t esp_redirHandle;
 
 /**
  * @brief Extract and analyze response from ESP-12F
@@ -62,22 +66,22 @@ uint8_t esp_get_response()
  */
 void esp_init(void) {
     uint8_t cmd[255] = {0};   // Command buffer
-
     // randomly send something to avoid the first response from ESP8266
     sprintf(cmd, "AT\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(10);
-
+    HAL_Delay(1000);
+    osThreadResume(&esp_redirHandle);
     // Perform reset
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
-    sprintf(cmd, "AT+RST\r\n");
+    sprintf(cmd, "AT+RESTORE\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (esp_get_response() == ESP_ERR) {
-        printf("ESP8266 reset failed\r\n");
+		LCD_DisplayString(100, 100, "ESP8266 reset failed");
         return;
     }
-    printf("ESP8266 reset successfully\r\n");
+    LCD_DisplayString(100, 100, "ESP8266 reset success");
+    osDelay(2000);
 
     // Set station mode
     sprintf(cmd, "AT+CWMODE=1\r\n");
@@ -86,6 +90,7 @@ void esp_init(void) {
         printf("ESP8266 set station mode failed\r\n");
         return;
     }
+    osDelay(1000);
 
     // Connect to WiFi
     sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t*) WIFI_SSID, (uint8_t*) WIFI_PWD);
@@ -94,7 +99,8 @@ void esp_init(void) {
         printf("ESP8266 connect to WiFi failed\r\n");
         return;
     }
-
+    LCD_DisplayString(100, 150, "ESP8266 connected to WiFi");
+    osDelay(1000);
     // configure MQTT user info
 
 }

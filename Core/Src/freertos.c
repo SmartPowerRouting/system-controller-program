@@ -307,7 +307,7 @@ void esp_conn_tsk(void *argument)
 {
   /* USER CODE BEGIN esp_conn_tsk */
 	// ESP-12F initialization
-  //esp_init();
+  esp_init();
   /* Infinite loop */
   for (;;)
   {
@@ -346,25 +346,7 @@ void pwr_monitor_tsk(void *argument)
     LCD_DisplayDecimals(0, 120, sysPwrData.out.voltage, 4, 2);
     LCD_DisplayDecimals(0, 140, sysPwrData.out.current, 4, 2);
     LCD_DisplayDecimals(0, 160, sysPwrData.out.power, 4, 2);
-
-    // overload detection
-    // if (sysPwrData.out.power > 150 || sysPwrData.bkup.power > 150 || sysPwrData.mmc.power > 150)
-    // {
-    //   LCD_SetBackColor(LCD_WHITE);
-    //   LCD_SetColor(LCD_RED);
-    //   LCD_DisplayString(0, 180, "OVERLOAD");
-
-    //   // turn off both power supplies
-    //   HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-    //   HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
-
-    //   // light the FAULT LED
-    //   HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-
-    //   //TODO: Send power-off warning info to ESP8266
-    // }
-
-    // TODO: under-voltage detection
+    osDelay(500);
   }
   /* USER CODE END pwr_monitor_tsk */
 }
@@ -473,6 +455,8 @@ void adc_value_tsk(void *argument)
     sysPwrData.out.voltage = adc1_buff[4]; // / 4096.0 * 3300;
     sysPwrData.out.current = adc1_buff[5]; // / 4096.0 * 3300 * CURRENT_MEASUREMENT_COEFFICIENT;
     sysPwrData.out.power = sysPwrData.out.voltage * sysPwrData.out.current;
+
+    // TODO: Overload Detection
 
     // send power data to power monitor
     osMessageQueuePut(sys_pwr_queueHandle, &sysPwrData, 0, 0);
