@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "adc.h"
 #include "dma.h"
 #include "spi.h"
@@ -61,11 +60,15 @@ uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffe
 uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
 
 uint32_t adc1_data[6]; // ADC1 DMA buffer
+
+float mmc_voltage, mmc_current, mmc_power;
+float bkup_voltage, bkup_current, bkup_power;
+float out_voltage, out_current, out_power;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -121,8 +124,7 @@ int main(void)
 	LCD_SetColor(LCD_BLACK);
 	LCD_SetAsciiFont(&ASCII_Font32);
 	LCD_Clear();
-  LCD_DisplayString(80, 80, "OS Started");
-	HAL_UART_Transmit(&huart1, "hello\r\n", 7, 100);
+  LCD_DisplayString(80, 80, "System Started");
 
 	// Enable UART DMA reception
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
@@ -136,31 +138,66 @@ int main(void)
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
 
+  esp_init();
+
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* Call init function for freertos objects (in cmsis_os2.c) */
-  MX_FREERTOS_Init();
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	LCD_SetBackColor(LCD_WHITE);
-	LCD_SetColor(LCD_BLACK);
-	LCD_SetAsciiFont(&ASCII_Font12);
-	LCD_Clear();
-	LCD_DisplayString(100, 100, "OS Unexpectedly Stopped");
-	printf("OS Unexpectedly Stopped\r\n");
-  HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
   while (1)
 		{
-			// do nothing
+			HAL_ADC_Stop_DMA(&hadc1);
+      // extract adc data
+      mmc_voltage = (float)adc1_data[0] * 3.3 / 4096;
+      mmc_current = (float)adc1_data[1] * 3.3 / 4096;
+      mmc_power = mmc_voltage * mmc_current;
+
+      bkup_voltage = (float)adc1_data[2] * 3.3 / 4096;
+      bkup_current = (float)adc1_data[3] * 3.3 / 4096;
+      bkup_power = bkup_voltage * bkup_current;
+
+      out_voltage = (float)adc1_data[4] * 3.3 / 4096;
+      out_current = (float)adc1_data[5] * 3.3 / 4096;
+      out_power = out_voltage * out_current;
+
+      HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
+      // display adc data
+      LCD_Clear();
+      LCD_DisplayString(0, 0, "MMC:");
+      LCD_DisplayString(0, 20, "V:");
+      LCD_DisplayNumber(20, 20, mmc_voltage, 5);
+      LCD_DisplayString(0, 40, "I:");
+      LCD_DisplayNumber(20, 40, mmc_current, 5);
+      LCD_DisplayString(0, 60, "P:");
+      LCD_DisplayNumber(20, 60, mmc_power, 5);
+
+      LCD_DisplayString(0, 80, "BKUP:");
+      LCD_DisplayString(0, 100, "V:");
+      LCD_DisplayNumber(20, 100, bkup_voltage, 5);
+      LCD_DisplayString(0, 120, "I:");
+      LCD_DisplayNumber(20, 120, bkup_current, 5);
+      LCD_DisplayString(0, 140, "P:");
+      LCD_DisplayNumber(20, 140, bkup_power, 5);
+
+      LCD_DisplayString(0, 160, "OUT:");
+      LCD_DisplayString(0, 180, "V:");
+      LCD_DisplayNumber(20, 180, out_voltage, 5);
+      LCD_DisplayString(0, 200, "I:");
+      LCD_DisplayNumber(20, 200, out_current, 5);
+      LCD_DisplayString(0, 220, "P:");
+      LCD_DisplayNumber(20, 220, out_power, 5);
+
+      //report to mqtt broker
+      esp_mqtt_report_pwr(mmc_voltage, mmc_current, mmc_power, bkup_voltage, bkup_current, bkup_power, out_voltage, out_current, out_power);
+
+      // overload pretection
+      if (mmc_power > 150 || bkup_power > 150 || out_power > 150)
+      {
+        LCD_DisplayString(0, 240, "OVERLOAD");
+      }
+
+
+
     }
     /* USER CODE END WHILE */
 
