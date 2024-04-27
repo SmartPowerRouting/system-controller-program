@@ -23,8 +23,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "adc.h"
 #include "printf.h"
 #include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,8 +62,11 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
+extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim1;
@@ -81,6 +87,9 @@ extern osMessageQueueId_t uart1_rx_queueHandle;
 
 extern uint32_t adc1_data[3]; // Two ADCs, three channels each
 extern uint32_t adc2_data[3];
+
+int adc_cnt = 0; // Count the number of ADC interrupts
+float adc_data_buff[6] = {0.}; // ADC buffer for mean-value smoothing
 
 /* USER CODE END EV */
 
@@ -197,6 +206,20 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 channel4 global interrupt.
+  */
+void DMA1_Channel4_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 channel5 global interrupt.
   */
 void DMA1_Channel5_IRQHandler(void)
@@ -222,6 +245,34 @@ void DMA1_Channel6_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
 
   /* USER CODE END DMA1_Channel6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 channel7 global interrupt.
+  */
+void DMA1_Channel7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel7_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles ADC1 and ADC2 global interrupts.
+  */
+void ADC1_2_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC1_2_IRQn 0 */
+
+  /* USER CODE END ADC1_2_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc1);
+  /* USER CODE BEGIN ADC1_2_IRQn 1 */
+
+  /* USER CODE END ADC1_2_IRQn 1 */
 }
 
 /**
@@ -280,7 +331,8 @@ void USART2_IRQHandler(void)
     uart2_rx_data_len = tmp_len;
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
-    osMessageQueuePut(esp_rx_queueHandle, &uart2_rx_data, 0, 0);  // faster than printf
+    osMessageQueuePut(esp_rx_queueHandle, &uart2_rx_data, 0, 0); // faster than printf
+		//printf("(ITFunc) ESP8266 Echoed:\r\n%s\r\n", uart2_rx_data);
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */

@@ -28,9 +28,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "printf.h"
 #include "lcd.h"
 #include "spi.h"
-#include "printf.h"
+#include "esp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,8 +60,7 @@ uint8_t uart2_rx_data[255]; // UART2 DMA buffer
 uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
 uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
 
-uint32_t adc1_data[3]; // Two ADCs, three channels each
-uint32_t adc2_data[3];
+uint32_t adc1_data[6]; // ADC1 DMA buffer
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,7 +110,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_ADC2_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // LCD initialization
@@ -123,6 +122,7 @@ int main(void)
 	LCD_SetAsciiFont(&ASCII_Font32);
 	LCD_Clear();
   LCD_DisplayString(80, 80, "OS Started");
+	HAL_UART_Transmit(&huart1, "hello\r\n", 7, 100);
 
 	// Enable UART DMA reception
 	__HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
@@ -132,7 +132,9 @@ int main(void)
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+
+  HAL_ADCEx_Calibration_Start(&hadc1);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
 
   /* USER CODE END 2 */
 
@@ -186,7 +188,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -206,7 +208,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

@@ -53,11 +53,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOF, BKUP_STAT_Pin|MMC_STAT_Pin|WIFI_STAT_LED_Pin|FAULT_Pin
-                          |MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, WIFI_STAT_LED_Pin|FAULT_Pin|MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, PWRSEL_Pin|PWROFF_Pin|TB_BRAKE_Pin|TB_RELEASE_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, MMC_EN_Pin|BKUP_EN_Pin|TB_BRAKE_Pin|TB_RELEASE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LCD_CS_Pin|LCD_DC_Pin|LCD_Backlight_Pin, GPIO_PIN_RESET);
@@ -65,10 +64,8 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PFPin PFPin PFPin PFPin
-                           PFPin */
-  GPIO_InitStruct.Pin = BKUP_STAT_Pin|MMC_STAT_Pin|WIFI_STAT_LED_Pin|FAULT_Pin
-                          |MQTTSRV_STAT_Pin;
+  /*Configure GPIO pins : PFPin PFPin PFPin */
+  GPIO_InitStruct.Pin = WIFI_STAT_LED_Pin|FAULT_Pin|MQTTSRV_STAT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -81,7 +78,7 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(K_EB_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin */
-  GPIO_InitStruct.Pin = PWRSEL_Pin|PWROFF_Pin|TB_BRAKE_Pin|TB_RELEASE_Pin;
+  GPIO_InitStruct.Pin = MMC_EN_Pin|BKUP_EN_Pin|TB_BRAKE_Pin|TB_RELEASE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

@@ -57,10 +57,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BKUP_STAT_Pin GPIO_PIN_0
-#define BKUP_STAT_GPIO_Port GPIOF
-#define MMC_STAT_Pin GPIO_PIN_1
-#define MMC_STAT_GPIO_Port GPIOF
 #define WIFI_STAT_LED_Pin GPIO_PIN_2
 #define WIFI_STAT_LED_GPIO_Port GPIOF
 #define FAULT_Pin GPIO_PIN_3
@@ -75,16 +71,10 @@ void Error_Handler(void);
 #define ADC1_VBKUP_GPIO_Port GPIOA
 #define ADC1_VOUT_Pin GPIO_PIN_2
 #define ADC1_VOUT_GPIO_Port GPIOA
-#define ADC2_IMMC_Pin GPIO_PIN_3
-#define ADC2_IMMC_GPIO_Port GPIOA
-#define ADC2_IBKUP_Pin GPIO_PIN_4
-#define ADC2_IBKUP_GPIO_Port GPIOA
-#define ADC2_IOUT_Pin GPIO_PIN_5
-#define ADC2_IOUT_GPIO_Port GPIOA
-#define PWRSEL_Pin GPIO_PIN_7
-#define PWRSEL_GPIO_Port GPIOE
-#define PWROFF_Pin GPIO_PIN_8
-#define PWROFF_GPIO_Port GPIOE
+#define MMC_EN_Pin GPIO_PIN_7
+#define MMC_EN_GPIO_Port GPIOE
+#define BKUP_EN_Pin GPIO_PIN_8
+#define BKUP_EN_GPIO_Port GPIOE
 #define TB_BRAKE_Pin GPIO_PIN_9
 #define TB_BRAKE_GPIO_Port GPIOE
 #define TB_RELEASE_Pin GPIO_PIN_10

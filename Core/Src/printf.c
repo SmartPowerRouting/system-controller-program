@@ -1,4 +1,5 @@
 #include "printf.h"
+#include <string.h>
 
 int fputc(int ch, FILE* f)
 {
