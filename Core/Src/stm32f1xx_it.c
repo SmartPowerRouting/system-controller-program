@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include "lcd.h"
 #include "adc.h"
 #include "printf.h"
 #include "cmsis_os2.h"
@@ -80,15 +81,17 @@ extern uint8_t uart2_rx_data[255];
 extern uint8_t uart2_rx_data_len;
 extern uint8_t uart2_rx_flag;
 
-extern osMessageQueueId_t esp_rx_queueHandle;
-extern osMessageQueueId_t sys_pwr_queueHandle;
+extern osMessageQueueId_t esp_rx_queueHandle; // for response analysis
 extern osMessageQueueId_t esp_tx_queueHandle;
+extern osMessageQueueId_t sys_pwr_queueHandle;
 extern osMessageQueueId_t uart1_rx_queueHandle;
+extern osMessageQueueId_t uart1_tx_queueHandle;
+extern osMessageQueueId_t uart2_rx_queueHandle; // Used for echoing
+extern osMessageQueueId_t esp_response_queueHandle;
 
 extern uint32_t adc1_data[3]; // Two ADCs, three channels each
 extern uint32_t adc2_data[3];
 
-int adc_cnt = 0; // Count the number of ADC interrupts
 float adc_data_buff[6] = {0.}; // ADC buffer for mean-value smoothing
 
 /* USER CODE END EV */
@@ -117,7 +120,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  LCD_DisplayString(100, 100, "Hard fault");
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -304,7 +307,9 @@ void USART1_IRQHandler(void)
     uart1_rx_data_len = tmp_len;
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
-    printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
+    uint8_t buff[255] = {0};
+    sprintf(buff, ">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
+    osMessageQueuePut(uart1_tx_queueHandle, &buff, 0, 0);
     // Allow users to transmit AT instructions to ESP8266 through UART1
     osMessageQueuePut(uart1_rx_queueHandle, &uart1_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
@@ -331,8 +336,8 @@ void USART2_IRQHandler(void)
     uart2_rx_data_len = tmp_len;
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
-    osMessageQueuePut(esp_rx_queueHandle, &uart2_rx_data, 0, 0); // faster than printf
-		//printf("(ITFunc) ESP8266 Echoed:\r\n%s\r\n", uart2_rx_data);
+    osMessageQueuePut(uart2_rx_queueHandle, &uart2_rx_data, 0, 0); // for echoing
+    osMessageQueuePut(esp_rx_queueHandle, &uart2_rx_data, 0, 0); // for response analysis
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */

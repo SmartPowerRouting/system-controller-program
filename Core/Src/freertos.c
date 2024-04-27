@@ -55,99 +55,121 @@ extern uint32_t adc1_data[6];
 /* Definitions for os_led_blink */
 osThreadId_t os_led_blinkHandle;
 const osThreadAttr_t os_led_blink_attributes = {
-    .name = "os_led_blink",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "os_led_blink",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for esp_msg */
 osThreadId_t esp_msgHandle;
 const osThreadAttr_t esp_msg_attributes = {
-    .name = "esp_msg",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "esp_msg",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for esp_conn */
 osThreadId_t esp_connHandle;
 const osThreadAttr_t esp_conn_attributes = {
-    .name = "esp_conn",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "esp_conn",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
 const osThreadAttr_t pwr_monitor_attributes = {
-    .name = "pwr_monitor",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "pwr_monitor",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for dcdc_ctrl */
 osThreadId_t dcdc_ctrlHandle;
 const osThreadAttr_t dcdc_ctrl_attributes = {
-    .name = "dcdc_ctrl",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "dcdc_ctrl",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for adc_handler */
 osThreadId_t adc_handlerHandle;
 const osThreadAttr_t adc_handler_attributes = {
-    .name = "adc_handler",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "adc_handler",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for esp_redir */
 osThreadId_t esp_redirHandle;
 const osThreadAttr_t esp_redir_attributes = {
-    .name = "esp_redir",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "esp_redir",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for adc_value */
 osThreadId_t adc_valueHandle;
 const osThreadAttr_t adc_value_attributes = {
-    .name = "adc_value",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "adc_value",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for uart1_send */
+osThreadId_t uart1_sendHandle;
+const osThreadAttr_t uart1_send_attributes = {
+  .name = "uart1_send",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for esp_rx_queue */
 osMessageQueueId_t esp_rx_queueHandle;
 const osMessageQueueAttr_t esp_rx_queue_attributes = {
-    .name = "esp_rx_queue"};
-/* Definitions for esp_response_queue */
-osMessageQueueId_t esp_response_queueHandle;
-const osMessageQueueAttr_t esp_response_queue_attributes = {
-    .name = "esp_response_queue"};
+  .name = "esp_rx_queue"
+};
 /* Definitions for usr_voltage_queue */
 osMessageQueueId_t usr_voltage_queueHandle;
 const osMessageQueueAttr_t usr_voltage_queue_attributes = {
-    .name = "usr_voltage_queue"};
+  .name = "usr_voltage_queue"
+};
 /* Definitions for pwr_cmd_queue */
 osMessageQueueId_t pwr_cmd_queueHandle;
 const osMessageQueueAttr_t pwr_cmd_queue_attributes = {
-    .name = "pwr_cmd_queue"};
+  .name = "pwr_cmd_queue"
+};
 /* Definitions for sys_pwr_queue */
 osMessageQueueId_t sys_pwr_queueHandle;
 const osMessageQueueAttr_t sys_pwr_queue_attributes = {
-    .name = "sys_pwr_queue"};
+  .name = "sys_pwr_queue"
+};
 /* Definitions for dcdc_pwr_queue */
 osMessageQueueId_t dcdc_pwr_queueHandle;
 const osMessageQueueAttr_t dcdc_pwr_queue_attributes = {
-    .name = "dcdc_pwr_queue"};
+  .name = "dcdc_pwr_queue"
+};
 /* Definitions for esp_tx_queue */
 osMessageQueueId_t esp_tx_queueHandle;
 const osMessageQueueAttr_t esp_tx_queue_attributes = {
-    .name = "esp_tx_queue"};
+  .name = "esp_tx_queue"
+};
 /* Definitions for pwrSelCmd_queue */
 osMessageQueueId_t pwrSelCmd_queueHandle;
 const osMessageQueueAttr_t pwrSelCmd_queue_attributes = {
-    .name = "pwrSelCmd_queue"};
+  .name = "pwrSelCmd_queue"
+};
 /* Definitions for uart1_rx_queue */
 osMessageQueueId_t uart1_rx_queueHandle;
 const osMessageQueueAttr_t uart1_rx_queue_attributes = {
-    .name = "uart1_rx_queue"};
+  .name = "uart1_rx_queue"
+};
 /* Definitions for uart2_rx_queue */
 osMessageQueueId_t uart2_rx_queueHandle;
 const osMessageQueueAttr_t uart2_rx_queue_attributes = {
-    .name = "uart2_rx_queue"};
+  .name = "uart2_rx_queue"
+};
+/* Definitions for uart1_tx_queue */
+osMessageQueueId_t uart1_tx_queueHandle;
+const osMessageQueueAttr_t uart1_tx_queue_attributes = {
+  .name = "uart1_tx_queue"
+};
+/* Definitions for esp_rx_analyze_queue */
+osMessageQueueId_t esp_rx_analyze_queueHandle;
+const osMessageQueueAttr_t esp_rx_analyze_queue_attributes = {
+  .name = "esp_rx_analyze_queue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -162,16 +184,16 @@ void dcdc_ctrl_tsk(void *argument);
 void adc_handler_tsk(void *argument);
 void esp_redir_tsk(void *argument);
 void adc_value_tsk(void *argument);
+void uart1_send_tsk(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -190,34 +212,37 @@ void MX_FREERTOS_Init(void)
 
   /* Create the queue(s) */
   /* creation of esp_rx_queue */
-  esp_rx_queueHandle = osMessageQueueNew(5, 255, &esp_rx_queue_attributes);
-
-  /* creation of esp_response_queue */
-  esp_response_queueHandle = osMessageQueueNew(5, 255, &esp_response_queue_attributes);
+  esp_rx_queueHandle = osMessageQueueNew (5, 255, &esp_rx_queue_attributes);
 
   /* creation of usr_voltage_queue */
-  usr_voltage_queueHandle = osMessageQueueNew(1, sizeof(uint16_t), &usr_voltage_queue_attributes);
+  usr_voltage_queueHandle = osMessageQueueNew (1, sizeof(uint16_t), &usr_voltage_queue_attributes);
 
   /* creation of pwr_cmd_queue */
-  pwr_cmd_queueHandle = osMessageQueueNew(5, 2, &pwr_cmd_queue_attributes);
+  pwr_cmd_queueHandle = osMessageQueueNew (5, 2, &pwr_cmd_queue_attributes);
 
   /* creation of sys_pwr_queue */
-  sys_pwr_queueHandle = osMessageQueueNew(2, 18, &sys_pwr_queue_attributes);
+  sys_pwr_queueHandle = osMessageQueueNew (2, 18, &sys_pwr_queue_attributes);
 
   /* creation of dcdc_pwr_queue */
-  dcdc_pwr_queueHandle = osMessageQueueNew(2, 2, &dcdc_pwr_queue_attributes);
+  dcdc_pwr_queueHandle = osMessageQueueNew (2, 2, &dcdc_pwr_queue_attributes);
 
   /* creation of esp_tx_queue */
-  esp_tx_queueHandle = osMessageQueueNew(5, 255, &esp_tx_queue_attributes);
+  esp_tx_queueHandle = osMessageQueueNew (5, 255, &esp_tx_queue_attributes);
 
   /* creation of pwrSelCmd_queue */
-  pwrSelCmd_queueHandle = osMessageQueueNew(2, 1, &pwrSelCmd_queue_attributes);
+  pwrSelCmd_queueHandle = osMessageQueueNew (2, 1, &pwrSelCmd_queue_attributes);
 
   /* creation of uart1_rx_queue */
-  uart1_rx_queueHandle = osMessageQueueNew(2, 255, &uart1_rx_queue_attributes);
+  uart1_rx_queueHandle = osMessageQueueNew (2, 255, &uart1_rx_queue_attributes);
 
   /* creation of uart2_rx_queue */
-  uart2_rx_queueHandle = osMessageQueueNew(5, 255, &uart2_rx_queue_attributes);
+  uart2_rx_queueHandle = osMessageQueueNew (5, 255, &uart2_rx_queue_attributes);
+
+  /* creation of uart1_tx_queue */
+  uart1_tx_queueHandle = osMessageQueueNew (5, 255, &uart1_tx_queue_attributes);
+
+  /* creation of esp_rx_analyze_queue */
+  esp_rx_analyze_queueHandle = osMessageQueueNew (5, 255, &esp_rx_analyze_queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -248,6 +273,9 @@ void MX_FREERTOS_Init(void)
   /* creation of adc_value */
   adc_valueHandle = osThreadNew(adc_value_tsk, NULL, &adc_value_attributes);
 
+  /* creation of uart1_send */
+  uart1_sendHandle = osThreadNew(uart1_send_tsk, NULL, &uart1_send_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -255,6 +283,7 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_os_led_blink_tsk */
@@ -290,7 +319,7 @@ void esp_msg_tsk(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    //osMessageQueueGet(esp_rx_queueHandle, NULL, NULL, osWaitForever); // get message from ESP8266
+    // osMessageQueueGet(esp_rx_queueHandle, NULL, NULL, osWaitForever); // get message from ESP8266
     osDelay(1);
   }
   /* USER CODE END esp_msg_tsk */
@@ -306,8 +335,8 @@ void esp_msg_tsk(void *argument)
 void esp_conn_tsk(void *argument)
 {
   /* USER CODE BEGIN esp_conn_tsk */
-	// ESP-12F initialization
-  esp_init();
+  // ESP-12F initialization
+  //esp_init();
   /* Infinite loop */
   for (;;)
   {
@@ -400,19 +429,20 @@ void esp_redir_tsk(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    // check uart1 queue
-    if (osMessageQueueGetCount(uart1_rx_queueHandle) > 0)
+    if (osMessageQueueGetCount(uart1_rx_queueHandle) > 0) // Redirect UART1 data to ESP
     {
       uint8_t data[255];
       osMessageQueueGet(uart1_rx_queueHandle, &data, NULL, 0);
       HAL_UART_Transmit_DMA(&huart2, data, strlen(data));
     }
-    if (osMessageQueueGetCount(esp_rx_queueHandle) > 0)
+    if (osMessageQueueGetCount(uart2_rx_queueHandle) > 0) // Redirect ESP data to UART1
     {
-      uint8_t data[255];
-      osMessageQueueGet(esp_rx_queueHandle, &data, NULL, 0);
-      printf(">> ESP8266 Echoed: \r\n%s\r\n", data);
+      uint8_t data[255], buff[255];
+      osMessageQueueGet(uart2_rx_queueHandle, &data, NULL, 0);
+      sprintf(buff, ">> ESP8266 Echoed: \r\n%s\r\n", data);
+      osMessageQueuePut(uart1_tx_queueHandle, &buff, 0, 0);
     }
+    osDelay(10);
   }
   /* USER CODE END esp_redir_tsk */
 }
@@ -471,7 +501,32 @@ void adc_value_tsk(void *argument)
   /* USER CODE END adc_value_tsk */
 }
 
+/* USER CODE BEGIN Header_uart1_send_tsk */
+/**
+ * @brief Function implementing the uart1_send thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_uart1_send_tsk */
+void uart1_send_tsk(void *argument)
+{
+  /* USER CODE BEGIN uart1_send_tsk */
+  /* Infinite loop */
+  for (;;)
+  {
+    if (osMessageQueueGetCount(uart1_tx_queueHandle) > 0)
+    {
+      uint8_t data[255];
+      osMessageQueueGet(uart1_tx_queueHandle, &data, NULL, 0);
+      HAL_UART_Transmit_DMA(&huart1, data, strlen(data));
+    }
+    osDelay(10);
+  }
+  /* USER CODE END uart1_send_tsk */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+

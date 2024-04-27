@@ -70,7 +70,7 @@ void esp_init(void) {
     sprintf(cmd, "AT\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     HAL_Delay(1000);
-    osThreadResume(&esp_redirHandle);
+
     // Perform reset
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
