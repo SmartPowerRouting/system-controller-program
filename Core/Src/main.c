@@ -122,7 +122,7 @@ int main(void)
   LCD_Backlight_ON;
 	LCD_SetBackColor(LCD_WHITE);
 	LCD_SetColor(LCD_BLACK);
-	LCD_SetAsciiFont(&ASCII_Font32);
+	LCD_SetAsciiFont(&ASCII_Font20);
 	LCD_Clear();
   LCD_DisplayString(80, 80, "System Started");
 
@@ -196,7 +196,7 @@ int main(void)
         LCD_DisplayString(0, 240, "OVERLOAD");
       }
 
-
+      HAL_Delay(200);
 
     }
     /* USER CODE END WHILE */
