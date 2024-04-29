@@ -27,6 +27,11 @@
 #include "adc.h"
 #include "printf.h"
 
+//FreeRTOS
+#include "cmsis_os.h"
+#include "task.h"
+#include "queue.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,6 +86,11 @@ extern uint8_t uart2_rx_flag;
 
 extern uint32_t adc1_data[3]; // Two ADCs, three channels each
 extern uint32_t adc2_data[3];
+
+extern uint8_t os_running;
+
+extern osMessageQueueId_t esp_rx_queueHandle;
+extern osMessageQueueId_t esp_tx_queueHandle;
 
 float adc_data_buff[6] = {0.}; // ADC buffer for mean-value smoothing
 
@@ -165,19 +175,6 @@ void UsageFault_Handler(void)
 }
 
 /**
-  * @brief This function handles System service call via SWI instruction.
-  */
-void SVC_Handler(void)
-{
-  /* USER CODE BEGIN SVCall_IRQn 0 */
-
-  /* USER CODE END SVCall_IRQn 0 */
-  /* USER CODE BEGIN SVCall_IRQn 1 */
-
-  /* USER CODE END SVCall_IRQn 1 */
-}
-
-/**
   * @brief This function handles Debug monitor.
   */
 void DebugMon_Handler(void)
@@ -188,33 +185,6 @@ void DebugMon_Handler(void)
   /* USER CODE BEGIN DebugMonitor_IRQn 1 */
 
   /* USER CODE END DebugMonitor_IRQn 1 */
-}
-
-/**
-  * @brief This function handles Pendable request for system service.
-  */
-void PendSV_Handler(void)
-{
-  /* USER CODE BEGIN PendSV_IRQn 0 */
-
-  /* USER CODE END PendSV_IRQn 0 */
-  /* USER CODE BEGIN PendSV_IRQn 1 */
-
-  /* USER CODE END PendSV_IRQn 1 */
-}
-
-/**
-  * @brief This function handles System tick timer.
-  */
-void SysTick_Handler(void)
-{
-  /* USER CODE BEGIN SysTick_IRQn 0 */
-
-  /* USER CODE END SysTick_IRQn 0 */
-
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -340,6 +310,7 @@ void USART1_IRQHandler(void)
     uint8_t buff[255] = {0};
     printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
     // Allow users to transmit AT instructions to ESP8266 through UART1
+    osMessageQueuePut(esp_tx_queueHandle, uart1_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
   }
   /* USER CODE END USART1_IRQn 0 */
@@ -364,7 +335,8 @@ void USART2_IRQHandler(void)
     uart2_rx_data_len = tmp_len;
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
-		printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+		if (!os_running) printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+    osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */
