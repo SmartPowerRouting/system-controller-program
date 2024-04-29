@@ -25,9 +25,6 @@ float Kp = 0.25;
 float Ki = 100.;
 float Kd = 0.;
 
-// Function prototypes
-void dcdc_ctrl_tsk(void *argument);
-
 /**
  * @brief DC/DC converter control task which implements PID control and power-routing control.
  *
@@ -35,8 +32,8 @@ void dcdc_ctrl_tsk(void *argument);
  */
 void dcdc_ctrl_tsk(void *argument)
 {
-    float last_duty_ratio = 0.; // in percentage
-    float duty_ratio = 0.;      // in percentage
+    float last_duty_ratio = 0.;      // in percentage
+    float duty_ratio = 0.;           // in percentage
     float duty_ratio_increment = 0.; // in percentage
     float last_error = 0.;
     float last_last_error = 0.;
@@ -54,13 +51,13 @@ void dcdc_ctrl_tsk(void *argument)
         case PWR_SRC_MMC:
             // Set the output to MMC
             HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
-            osDelay(20);    // wait for the relay to switch
+            osDelay(20); // wait for the relay to switch
             HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
             break;
         case PWR_SRC_BKUP:
             // Set the output to backup
             HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-            osDelay(20);    // wait for the relay to switch
+            osDelay(20); // wait for the relay to switch
             HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_SET);
             break;
         case PWR_SRC_OFF:

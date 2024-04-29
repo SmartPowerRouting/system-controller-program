@@ -54,15 +54,15 @@
 /* USER CODE BEGIN PV */
 uint8_t uart1_rx_data[255]; // UART1 DMA buffer
 uint8_t uart1_rx_data_len; // length of message received from UART1 in DMA buffer
-uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
+volatile uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
 
 uint8_t uart2_rx_data[255]; // UART2 DMA buffer
 uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
-uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
+volatile uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
 
 uint32_t adc1_data[6]; // ADC1 DMA buffer
 
-uint8_t os_running = 0; // Indicating if FreeRTOS has started
+volatile uint8_t os_running = 0; // Indicating if FreeRTOS has started
 
 float mmc_voltage, mmc_current, mmc_power;
 float bkup_voltage, bkup_current, bkup_power;
@@ -141,6 +141,8 @@ int main(void)
 
   // Network initialization
   esp_init();
+	
+	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,50);
 
   // Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller

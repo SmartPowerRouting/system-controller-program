@@ -49,6 +49,8 @@ extern uint8_t uart2_rx_flag;        // Flag to indicate that UART2 DMA has rece
 extern uint8_t mqtt_recv_topic[255]; // MQTT received topic
 extern uint8_t mqtt_recv_msg[255];   // MQTT received message
 
+extern uint32_t adc1_data[6]; // ADC data
+
 // Message queues
 extern osMessageQueueId_t esp_rx_queueHandle; // ESP message queue
 extern osMessageQueueId_t esp_tx_queueHandle; // MQTT message queue
@@ -153,7 +155,7 @@ void esp_mqtt_report_pwr(float mmc_voltage, float mmc_current, float mmc_power, 
     tmp_bkup_power = (uint16_t)(bkup_power * 100);
     tmp_out_voltage = (uint16_t)(out_voltage * 100);
     tmp_out_current = (uint16_t)(out_current * 100);
-    tmp_out_power = (uint16_t)(out_power * 100);
+    tmp_out_power = (uint16_t)(out_power * 100);-
     sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%04x%04x%04x%04x%04x%04x%04x%04x%04x\",2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS, tmp_mmc_voltage, tmp_mmc_current, tmp_mmc_power, tmp_bkup_voltage, tmp_bkup_current, tmp_bkup_power, tmp_out_voltage, tmp_out_current, tmp_out_power);
     HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
 }
@@ -191,4 +193,25 @@ void esp_send_tsk(void *argument)
 				osDelay(50);  // Have to wait until the last transmit ends,
 				              // otherwise DMA does not have enough time
     }
+}
+
+/**
+ * @brief Real-time power transmission to ESP using a Timer, this is the callback fcn
+ *
+ * @param argument
+ */
+void tmr_report_pwr_clbk(void *argument)
+{
+    uint16_t adc_to_send[6];
+    memcpy(adc_to_send, (uint16_t*) adc1_data, sizeof(adc_to_send));
+
+    // Send data to ESP8266
+    uint8_t buff[255] = {0};
+    buff[0] = 0; // set header
+
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%04d%04d%04d%04d%04d%04d\",2,0\r\n",
+                (uint8_t *)MQTT_TOPIC_STATUS,
+                adc_to_send[0], adc_to_send[1], adc_to_send[2], adc_to_send[3], adc_to_send[4], adc_to_send[5]);
+    
+    osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }

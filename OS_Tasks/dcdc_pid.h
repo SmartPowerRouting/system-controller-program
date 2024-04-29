@@ -3,9 +3,9 @@
  * @author Tiantian Zhong (giant@zju.edu.cn)
  * @version 0.1
  * @date 2024-04-28
- * 
+ *
  * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024 Project 19.
- * 
+ *
  */
 
 #include "main.h"
@@ -25,7 +25,7 @@ typedef struct
     float bkup_voltage;
     float out_voltage;
     uint8_t target_voltage; // desired output voltage: 10-30V
-    uint8_t pwr_src; // PWR_SRC_MMC, PWR_SRC_BKUP, PWR_SRC_OFF
+    uint8_t pwr_src;        // PWR_SRC_MMC, PWR_SRC_BKUP, PWR_SRC_OFF
 } dcdcParams_t;
 
 // Function prototypes

@@ -108,6 +108,11 @@ osMessageQueueId_t dcdc_param_queueHandle;
 const osMessageQueueAttr_t dcdc_param_queue_attributes = {
   .name = "dcdc_param_queue"
 };
+/* Definitions for tmr_report_pwr */
+osTimerId_t tmr_report_pwrHandle;
+const osTimerAttr_t tmr_report_pwr_attributes = {
+  .name = "tmr_report_pwr"
+};
 /* Definitions for wifi_connected */
 osEventFlagsId_t wifi_connectedHandle;
 const osEventFlagsAttr_t wifi_connected_attributes = {
@@ -144,6 +149,7 @@ extern void esp_msg_tsk(void *argument);
 extern void esp_send_tsk(void *argument);
 extern void dcdc_ctrl_tsk(void *argument);
 void led_blink_tsk(void *argument);
+extern void tmr_report_pwr_clbk(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -164,6 +170,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* creation of tmr_report_pwr */
+  tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -238,6 +248,8 @@ void MX_FREERTOS_Init(void) {
 void pwr_monitor_tsk(void *argument)
 {
   /* USER CODE BEGIN pwr_monitor_tsk */
+	uint32_t adc_value_buff[6];
+	
   /* Infinite loop */
   for(;;)
   {
@@ -259,6 +271,7 @@ void led_blink_tsk(void *argument)
   /* Infinite loop */
 	uint8_t eb_handled = 0;
 	os_running = 1;
+  osTimerStart(tmr_report_pwrHandle, 500);
 	HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
   for(;;)
   {
