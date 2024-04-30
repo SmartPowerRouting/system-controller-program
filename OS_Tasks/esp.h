@@ -47,5 +47,6 @@ typedef struct
 // Function prototypes
 void esp_init(void);
 uint8_t esp_get_response();
+void esp_mqtt_report_pwr(float mmc_voltage, float mmc_current, float mmc_power, float bkup_voltage, float bkup_current, float bkup_power, float out_voltage, float out_current, float out_power);
 
 #endif // __ESP_H
