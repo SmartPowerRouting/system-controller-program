@@ -281,7 +281,9 @@ void led_blink_tsk(void *argument)
 			LCD_DisplayString(0, 200, "EB Pressed");
 			eb_handled = 1;
 			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-			vTaskSuspendAll();
+			HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
+			osThreadSuspend(dcdc_ctrlHandle);
+			// TODO: Cut off power sources and set duty ratio to zero
 		}
     while (eb_scan())
     {
@@ -289,7 +291,10 @@ void led_blink_tsk(void *argument)
     }
 		if (!eb_scan() && eb_handled)
 		{
-			xTaskResumeAll();
+			LCD_ClearRect(0, 200, 280, 20);
+			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
+			osThreadResume(dcdc_ctrlHandle);
+			// TODO: Check if the power should be resumed??
 		}
     osDelay(500);
   }

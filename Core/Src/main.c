@@ -168,6 +168,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
 		{
+			// we should never get here
 		}
     /* USER CODE END WHILE */
 
