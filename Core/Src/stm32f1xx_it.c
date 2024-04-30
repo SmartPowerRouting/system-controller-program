@@ -22,8 +22,16 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+#include "lcd.h"
+#include "adc.h"
 #include "printf.h"
-#include "cmsis_os2.h"
+
+//FreeRTOS
+#include "cmsis_os.h"
+#include "task.h"
+#include "queue.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,8 +66,11 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
+extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
+extern DMA_HandleTypeDef hdma_usart2_tx;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim1;
@@ -73,8 +84,16 @@ extern uint8_t uart2_rx_data[255];
 extern uint8_t uart2_rx_data_len;
 extern uint8_t uart2_rx_flag;
 
-extern osMessageQueueId_t uart1_rx_msgHandle;
-extern osMessageQueueId_t uart2_rx_msgHandle;
+extern uint32_t adc1_data[3]; // Two ADCs, three channels each
+extern uint32_t adc2_data[3];
+
+extern uint8_t os_running;
+
+extern osMessageQueueId_t esp_rx_queueHandle;
+extern osMessageQueueId_t esp_tx_queueHandle;
+
+float adc_data_buff[6] = {0.}; // ADC buffer for mean-value smoothing
+
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -101,7 +120,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  LCD_DisplayString(100, 100, "Hard fault");
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -190,6 +209,20 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 channel4 global interrupt.
+  */
+void DMA1_Channel4_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 channel5 global interrupt.
   */
 void DMA1_Channel5_IRQHandler(void)
@@ -215,6 +248,34 @@ void DMA1_Channel6_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel6_IRQn 1 */
 
   /* USER CODE END DMA1_Channel6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 channel7 global interrupt.
+  */
+void DMA1_Channel7_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel7_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_tx);
+  /* USER CODE BEGIN DMA1_Channel7_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel7_IRQn 1 */
+}
+
+/**
+  * @brief This function handles ADC1 and ADC2 global interrupts.
+  */
+void ADC1_2_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC1_2_IRQn 0 */
+
+  /* USER CODE END ADC1_2_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc1);
+  /* USER CODE BEGIN ADC1_2_IRQn 1 */
+
+  /* USER CODE END ADC1_2_IRQn 1 */
 }
 
 /**
@@ -246,8 +307,10 @@ void USART1_IRQHandler(void)
     uart1_rx_data_len = tmp_len;
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
-    osMessageQueuePut(uart1_rx_msgHandle, &uart1_rx_data, 0, 0);
+    uint8_t buff[255] = {0};
     printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
+    // Allow users to transmit AT instructions to ESP8266 through UART1
+    osMessageQueuePut(esp_tx_queueHandle, uart1_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
   }
   /* USER CODE END USART1_IRQn 0 */
@@ -270,10 +333,10 @@ void USART2_IRQHandler(void)
     HAL_UART_DMAStop(&huart2);
     uint32_t tmp_len = huart2.RxXferSize - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
     uart2_rx_data_len = tmp_len;
-    uart2_rx_flag = 1;
     uart2_rx_data[uart2_rx_data_len] = '\0';
-    osMessageQueuePut(uart2_rx_msgHandle, &uart2_rx_data, 0, 0);
-    printf(">> UART2 Received: \r\n%s\r\n", uart2_rx_data);
+    uart2_rx_flag = 1;
+		if (!os_running) printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+    osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */

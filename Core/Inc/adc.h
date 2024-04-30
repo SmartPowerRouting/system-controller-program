@@ -41,7 +41,25 @@ extern ADC_HandleTypeDef hadc1;
 void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/*
+ * The data structure to store power data for a single source.
+ */
+typedef struct
+{
+  uint16_t voltage; // in mV
+  uint16_t current; // in mA
+  uint32_t power;   // in uW
+} pwrData_t;
 
+/*
+ * The data structure to store power data for all channels, which is to be used in the queue.
+ */
+typedef struct
+{
+  pwrData_t mmc;
+  pwrData_t bkup;
+  pwrData_t out;
+} sysPwrDataQueue_t;
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
