@@ -283,6 +283,10 @@ void led_blink_tsk(void *argument)
 			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
 			vTaskSuspendAll();
 		}
+    while (eb_scan())
+    {
+      osDelay(1);
+    }
 		if (!eb_scan() && eb_handled)
 		{
 			xTaskResumeAll();

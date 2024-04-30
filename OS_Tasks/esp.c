@@ -202,8 +202,8 @@ void esp_send_tsk(void *argument)
  */
 void tmr_report_pwr_clbk(void *argument)
 {
-    uint16_t adc_to_send[6];
-    memcpy(adc_to_send, (uint16_t*) adc1_data, sizeof(adc_to_send));
+    uint32_t adc_to_send[6];
+    memcpy(adc_to_send, (uint32_t*) adc1_data, sizeof(adc_to_send));
 
     // Send data to ESP8266
     uint8_t buff[255] = {0};
