@@ -103,11 +103,24 @@ void esp_init(void)
     // Set station mode
     sprintf(cmd, "AT+CWMODE=1\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+		while (strstr(uart2_rx_data, "\r\nOK\r\n"))
+		{
+			HAL_Delay(10);
+		}
+		memset(uart2_rx_data, 0, sizeof(uart2_rx_data));
     HAL_Delay(1000);
 
     // Connect to WiFi
     sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+		while (strstr(uart2_rx_data, "\r\nOK\r\n"))
+		{
+			HAL_Delay(10);
+			if (strstr(uart2_rx_data, "\r\nERROR\r\n"))
+			{
+				HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+			}
+		}
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
     HAL_Delay(8000);
 
@@ -127,37 +140,6 @@ void esp_init(void)
     sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"hello world\",2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     HAL_Delay(1000);
-}
-
-/**
- * @brief A plain version to report power status to MQTT broker.
- * 
- * @param mmc_voltage 
- * @param mmc_current 
- * @param mmc_power 
- * @param bkup_voltage 
- * @param bkup_current 
- * @param bkup_power 
- * @param out_voltage 
- * @param out_current 
- * @param out_power 
- */
-void esp_mqtt_report_pwr(float mmc_voltage, float mmc_current, float mmc_power, float bkup_voltage, float bkup_current, float bkup_power, float out_voltage, float out_current, float out_power)
-{
-    uint8_t buff[255] = {0};
-    buff[0] = 0; // set header
-    uint16_t tmp_mmc_voltage, tmp_mmc_current, tmp_mmc_power, tmp_bkup_voltage, tmp_bkup_current, tmp_bkup_power, tmp_out_voltage, tmp_out_current, tmp_out_power;
-    tmp_mmc_voltage = (uint16_t)(mmc_voltage * 100);
-    tmp_mmc_current = (uint16_t)(mmc_current * 100);
-    tmp_mmc_power = (uint16_t)(mmc_power * 100);
-    tmp_bkup_voltage = (uint16_t)(bkup_voltage * 100);
-    tmp_bkup_current = (uint16_t)(bkup_current * 100);
-    tmp_bkup_power = (uint16_t)(bkup_power * 100);
-    tmp_out_voltage = (uint16_t)(out_voltage * 100);
-    tmp_out_current = (uint16_t)(out_current * 100);
-    tmp_out_power = (uint16_t)(out_power * 100);-
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%04x%04x%04x%04x%04x%04x%04x%04x%04x\",2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS, tmp_mmc_voltage, tmp_mmc_current, tmp_mmc_power, tmp_bkup_voltage, tmp_bkup_current, tmp_bkup_power, tmp_out_voltage, tmp_out_current, tmp_out_power);
-    HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
 }
 
 // FreeRTOS tasks
@@ -207,9 +189,8 @@ void tmr_report_pwr_clbk(void *argument)
 
     // Send data to ESP8266
     uint8_t buff[255] = {0};
-    buff[0] = 0; // set header
 
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%04d%04d%04d%04d%04d%04d\",2,0\r\n",
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%04d%04d%04d%04d%04d%04d\",2,0\r\n",
                 (uint8_t *)MQTT_TOPIC_STATUS,
                 adc_to_send[0], adc_to_send[1], adc_to_send[2], adc_to_send[3], adc_to_send[4], adc_to_send[5]);
     
