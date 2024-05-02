@@ -298,7 +298,7 @@ void pwr_monitor_tsk(void *argument)
 
     if (osMutexAcquire(lcd_mutexHandle, 0) == osOK)
     {
-      // LCD_ClearRect(0, 0, 280, 200);
+      // Display ADC Data
       LCD_DisplayDecimals(50,0,sys_pwr.mmc.voltage, 5, 2);
       LCD_DisplayDecimals(50,20,sys_pwr.mmc.current, 5, 2);
       LCD_DisplayDecimals(50,40,sys_pwr.mmc.power, 5, 2);
