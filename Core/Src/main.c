@@ -64,10 +64,6 @@ uint32_t adc1_data[6]; // ADC1 DMA buffer
 
 volatile uint8_t os_running = 0; // Indicating if FreeRTOS has started
 
-float mmc_voltage, mmc_current, mmc_power;
-float bkup_voltage, bkup_current, bkup_power;
-float out_voltage, out_current, out_power;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -140,8 +136,6 @@ int main(void)
 
   // Network initialization
   esp_init();
-	
-	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,50);
 
   // Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller

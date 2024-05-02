@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * File Name          : freertos.c
-  * Description        : Code for freertos applications
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * File Name          : freertos.c
+ * Description        : Code for freertos applications
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -26,9 +26,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 // peripherals
+#include "tim.h"
 #include "lcd.h"
 #include "usart.h"
-
+#include "adc.h"
 #include "esp.h"
 #include "dcdc_pid.h"
 
@@ -52,6 +53,13 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 extern uint8_t os_running;
+
+// ADC data buffer
+extern uint32_t adc1_data[6];
+
+// Power data
+sysPwrData_t sys_pwr = {0};
+
 /* USER CODE END Variables */
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
@@ -113,6 +121,16 @@ osTimerId_t tmr_report_pwrHandle;
 const osTimerAttr_t tmr_report_pwr_attributes = {
   .name = "tmr_report_pwr"
 };
+/* Definitions for adc_mutex */
+osMutexId_t adc_mutexHandle;
+const osMutexAttr_t adc_mutex_attributes = {
+  .name = "adc_mutex"
+};
+/* Definitions for lcd_mutex */
+osMutexId_t lcd_mutexHandle;
+const osMutexAttr_t lcd_mutex_attributes = {
+  .name = "lcd_mutex"
+};
 /* Definitions for wifi_connected */
 osEventFlagsId_t wifi_connectedHandle;
 const osEventFlagsAttr_t wifi_connected_attributes = {
@@ -162,6 +180,12 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of adc_mutex */
+  adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
+
+  /* creation of lcd_mutex */
+  lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -216,7 +240,6 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
-  /* Create the event(s) */
   /* creation of wifi_connected */
   wifi_connectedHandle = osEventFlagsNew(&wifi_connected_attributes);
 
@@ -240,62 +263,104 @@ void MX_FREERTOS_Init(void) {
 
 /* USER CODE BEGIN Header_pwr_monitor_tsk */
 /**
-  * @brief  Function implementing the pwr_monitor thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+ * @brief  Function implementing the pwr_monitor thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_pwr_monitor_tsk */
 void pwr_monitor_tsk(void *argument)
 {
   /* USER CODE BEGIN pwr_monitor_tsk */
-	uint32_t adc_value_buff[6];
-	
+  uint32_t adc_value_buff[6];
+  osMutexAcquire(adc_mutexHandle, osWaitForever);
+  LCD_Clear();
+  osMutexRelease(adc_mutexHandle);
   /* Infinite loop */
-  for(;;)
+  for (;;)
   {
-    osDelay(1);
+    if (osMutexAcquire(adc_mutexHandle, osWaitForever) == osOK)
+    {
+      memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
+      osMutexRelease(adc_mutexHandle);
+
+      // Calculate power data
+      sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT;
+      sys_pwr.mmc.current = (2.5 - (adc_value_buff[1] / ADC_COEFFICIENT)) / 0.1;
+      sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
+      sys_pwr.bkup.voltage = adc_value_buff[2] / ADC_COEFFICIENT;
+      sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
+      sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
+      sys_pwr.out.voltage = adc_value_buff[4] / ADC_COEFFICIENT;
+      sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
+      sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
+    }
+
+
+    if (osMutexAcquire(lcd_mutexHandle, 0) == osOK)
+    {
+      // LCD_ClearRect(0, 0, 280, 200);
+      LCD_DisplayDecimals(50,0,sys_pwr.mmc.voltage, 5, 2);
+      LCD_DisplayDecimals(50,20,sys_pwr.mmc.current, 5, 2);
+      LCD_DisplayDecimals(50,40,sys_pwr.mmc.power, 5, 2);
+      LCD_DisplayDecimals(50,60,sys_pwr.bkup.voltage, 5, 2);
+      LCD_DisplayDecimals(50,80,sys_pwr.bkup.current, 5, 2);
+      LCD_DisplayDecimals(50,100,sys_pwr.bkup.power, 5, 2);
+      LCD_DisplayDecimals(50,120,sys_pwr.out.voltage, 5, 2);
+      LCD_DisplayDecimals(50,140,sys_pwr.out.current, 5, 2);
+      LCD_DisplayDecimals(50,160,sys_pwr.out.power, 5, 2);
+      osMutexRelease(lcd_mutexHandle);
+    }
+
+    osDelay(1000);
   }
   /* USER CODE END pwr_monitor_tsk */
 }
 
 /* USER CODE BEGIN Header_led_blink_tsk */
 /**
-* @brief Function implementing the led_blink thread.
-* @param argument: Not used
-* @retval None
-*/
+ * @brief Function implementing the led_blink thread.
+ * @param argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_led_blink_tsk */
 void led_blink_tsk(void *argument)
 {
   /* USER CODE BEGIN led_blink_tsk */
   /* Infinite loop */
-	uint8_t eb_handled = 0;
-	os_running = 1;
-  osTimerStart(tmr_report_pwrHandle, 500);
-	HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
-  for(;;)
+  uint8_t eb_handled = 0;
+  os_running = 1;
+  osTimerStart(tmr_report_pwrHandle, 1000);
+  HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
+  for (;;)
   {
     HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
-		if (eb_scan())
-		{
-			LCD_DisplayString(0, 200, "EB Pressed");
-			eb_handled = 1;
-			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
-			osThreadSuspend(dcdc_ctrlHandle);
-			// TODO: Cut off power sources and set duty ratio to zero
-		}
+    if (eb_scan())
+    {
+      eb_handled = 1;
+      HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
+      osMutexAcquire(lcd_mutexHandle, osWaitForever);
+      LCD_DisplayString(0, 200, "EB Pressed");
+      osMutexRelease(lcd_mutexHandle);
+      osThreadSuspend(dcdc_ctrlHandle);
+      // set timer duty ratio to zero
+      HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+      // TODO: Cut off power sources and set duty ratio to zero
+    }
     while (eb_scan())
     {
       osDelay(1);
     }
-		if (!eb_scan() && eb_handled)
-		{
-			LCD_ClearRect(0, 200, 280, 20);
-			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
-			osThreadResume(dcdc_ctrlHandle);
-			// TODO: Check if the power should be resumed??
-		}
+    if (!eb_scan() && eb_handled)
+    {
+      osMutexAcquire(lcd_mutexHandle, osWaitForever);
+      LCD_ClearRect(0, 200, 280, 20);
+      osMutexRelease(lcd_mutexHandle);
+      HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
+      HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+      osThreadResume(dcdc_ctrlHandle);
+      // TODO: Check if the power should be resumed??
+    }
     osDelay(500);
   }
   /* USER CODE END led_blink_tsk */

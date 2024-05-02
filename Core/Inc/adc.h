@@ -35,7 +35,7 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-
+#define ADC_COEFFICIENT 1317.00
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
@@ -46,20 +46,20 @@ void MX_ADC1_Init(void);
  */
 typedef struct
 {
-  uint16_t voltage; // in mV
-  uint16_t current; // in mA
-  uint32_t power;   // in uW
-} pwrData_t;
+  float voltage; // in mV
+  float current; // in mA
+  float power;   // in uW
+} pwrDataSingleSrc_t;
 
 /*
  * The data structure to store power data for all channels, which is to be used in the queue.
  */
 typedef struct
 {
-  pwrData_t mmc;
-  pwrData_t bkup;
-  pwrData_t out;
-} sysPwrDataQueue_t;
+  pwrDataSingleSrc_t mmc;
+  pwrDataSingleSrc_t bkup;
+  pwrDataSingleSrc_t out;
+} sysPwrData_t;
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
