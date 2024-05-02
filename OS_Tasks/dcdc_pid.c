@@ -10,17 +10,21 @@
  */
 
 #include "dcdc_pid.h"
-#include "main.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
 #include "task.h"
-#include "queue.h"
-#include "semphr.h"
+#include "cmsis_os.h"
+
 #include "tim.h"
+
+// mutexes
+extern osMutexId_t adc_mutexHandle;
+
+// adc data
+extern uint32_t adc1_data[6];
 
 // message queues
 extern osMessageQueueId_t dcdc_param_queueHandle;
-extern osMutexId_t adc_mutexHandle;
-extern uint32_t adc1_data[6];
+dcdcParams_t dcdc_params;
 
 // PID parameters
 float Kp = 0.25;
@@ -40,8 +44,7 @@ void dcdc_ctrl_tsk(void *argument)
     float last_error = 0.;
     float last_last_error = 0.;
     float error = 0.;
-
-    float out_voltage;
+    float desired_voltage = 12.; // in V
 
     for (;;)
     {
@@ -49,13 +52,10 @@ void dcdc_ctrl_tsk(void *argument)
         last_error = error;
         last_duty_ratio = duty_ratio;
         // Get parameters from the message queue
-        // osMessageQueueGet(dcdc_param_queueHandle, &dcdc_params, NULL, osWaitForever);
-        osMutexAcquire(adc_mutexHandle, 0);
-        out_voltage = adc1_data[2] * 3.3 / 4095 * 11.0;
+        osMutexAcquire(adc_mutexHandle, osWaitForever);
+        error = desired_voltage - adc1_data[0] * 3.3 / 4096;
         osMutexRelease(adc_mutexHandle);
 
-        // calculate error
-        error =  - out_voltage;
         // Incremental PID
         duty_ratio_increment = Kp * (error - last_error) + Ki * error + Kd * (error - 2 * last_error + last_last_error);
         duty_ratio += duty_ratio_increment;
