@@ -34,11 +34,11 @@
 // User command structure
 typedef struct
 {
-    uint8_t type;
-    uint8_t value;  // CMD_SET_VOLTAGE: 10-30 (unit: V)
+    uint8_t cmdType;
+    uint8_t cmdValue;  // CMD_SET_VOLTAGE: 10-30 (unit: V)
                     // CMD_SET_PWR_SRC: CMD_USE_MMC/CMD_USE_BKUP
                     // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
-} usrCmdFromESP_t;
+} usrCmd_t;
 
 // Function prototypes
 void esp_init(void);

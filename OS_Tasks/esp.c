@@ -55,12 +55,16 @@ extern uint32_t adc1_data[6]; // ADC data
 // Message queues
 extern osMessageQueueId_t esp_rx_queueHandle; // ESP message queue
 extern osMessageQueueId_t esp_tx_queueHandle; // MQTT message queue
+extern osMessageQueueId_t usr_cmd_queueHandle; // User command queue
 
 // mutexes
 extern osMutexId_t adc_mutexHandle;
 
 // For adc data calculating
 sysPwrData_t sys_pwr_report = {0};
+
+// For user command
+usrCmd_t usr_cmd = {0};
 
 /**
  * @brief Extract and analyze response from ESP-12F
@@ -160,27 +164,44 @@ void esp_msg_tsk(void *argument)
   for (;;)
   {
     uint8_t buff[255] = {0};
-    osMessageQueueGet(esp_rx_queueHandle, buff, NULL, osWaitForever);
-    // echo to UART1
-    HAL_UART_Transmit_DMA(&huart1, buff, strlen(buff));
-    osDelay(50);
-  }
-}
+    // handle message that is to transmit
+    if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
+    {
+      HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
+      osDelay(50); // Have to wait until the last transmit ends,
+                   // otherwise DMA does not have enough time
+    }
 
-/**
- * @brief Send message to ESP-12F.
- *
- * @param argument
- */
-void esp_send_tsk(void *argument)
-{
-  for (;;)
-  {
-    uint8_t buff[255] = {0};
-    osMessageQueueGet(esp_tx_queueHandle, buff, NULL, osWaitForever);
-    HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
-    osDelay(50); // Have to wait until the last transmit ends,
-                 // otherwise DMA does not have enough time
+    if (osMessageQueueGet(esp_rx_queueHandle, buff, NULL, 0) == osOK)
+    {
+      osMessageQueueGet(esp_rx_queueHandle, buff, NULL, osWaitForever);
+      HAL_UART_Transmit_DMA(&huart1, buff, strlen(buff)); // echo to UART1
+
+      // Analyze the response from ESP8266
+      // Case a): MQTT received message with topic and payload
+      if (strstr(buff, "+MQTTRECV") != NULL)
+      {
+        // Extract topic and message
+        sscanf(buff, "+MQTTRECV=%[^,],%[^,],%s", mqtt_recv_topic, mqtt_recv_msg); // TODO: Message Extraction
+        // Handle the message
+        if (strstr(mqtt_recv_topic, MQTT_TOPIC_USR_CMD))
+        {
+          // Handle user command
+          if (strstr(mqtt_recv_msg, "ON"))
+          {
+            usr_cmd.cmdType = CMD_SET_PWR_STAT;
+            usr_cmd.cmdValue = CMD_PWR_ON;
+            osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 0);
+          }
+          else if (strstr(mqtt_recv_msg, "OFF"))
+          {
+            // TODO: Turn off the power sources
+          }
+        }
+      }
+
+      osDelay(50);
+    }
   }
 }
 
@@ -216,6 +237,7 @@ void tmr_report_pwr_clbk(void *argument)
           sys_pwr_report.bkup.voltage,
           sys_pwr_report.bkup.current,
           sys_pwr_report.bkup.power);
+          // TODO: Fix the power report message
 
   osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }

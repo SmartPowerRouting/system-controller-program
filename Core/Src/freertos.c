@@ -75,13 +75,6 @@ const osThreadAttr_t esp_msg_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for esp_send */
-osThreadId_t esp_sendHandle;
-const osThreadAttr_t esp_send_attributes = {
-  .name = "esp_send",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for dcdc_ctrl */
 osThreadId_t dcdc_ctrlHandle;
 const osThreadAttr_t dcdc_ctrl_attributes = {
@@ -164,7 +157,6 @@ extern uint8_t eb_scan();
 
 void pwr_monitor_tsk(void *argument);
 extern void esp_msg_tsk(void *argument);
-extern void esp_send_tsk(void *argument);
 extern void dcdc_ctrl_tsk(void *argument);
 void led_blink_tsk(void *argument);
 extern void tmr_report_pwr_clbk(void *argument);
@@ -226,9 +218,6 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of esp_msg */
   esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
-
-  /* creation of esp_send */
-  esp_sendHandle = osThreadNew(esp_send_tsk, NULL, &esp_send_attributes);
 
   /* creation of dcdc_ctrl */
   dcdc_ctrlHandle = osThreadNew(dcdc_ctrl_tsk, NULL, &dcdc_ctrl_attributes);
