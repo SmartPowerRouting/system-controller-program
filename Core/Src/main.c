@@ -117,7 +117,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // LCD initialization
   SPI_LCD_Init ();
@@ -140,13 +139,13 @@ int main(void)
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
   // Network initialization
-  esp_init();
+  //esp_init();
 	
-	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,50);
-
-  // Start PWM generator
+	// Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	
+	//__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,50);
 
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
@@ -196,7 +195,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -216,7 +215,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();

@@ -157,23 +157,7 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>108</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134237252</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\OS_Tasks\esp.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\system_controller_program\../OS_Tasks/esp.c\108</Expression>
-        </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>47</LineNumber>
+          <LineNumber>288</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
           <ByteObject>0</ByteObject>
@@ -182,9 +166,41 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\OS_Tasks\dcdc_pid.c</Filename>
+          <Filename>../Core/Src/freertos.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>146</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134238972</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>../Core/Src/main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\system_controller_program\../Core/Src/main.c\146</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>269</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134242768</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>../Core/Src/freertos.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\system_controller_program\../Core/Src/freertos.c\269</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -440,7 +456,7 @@
       <GroupNumber>3</GroupNumber>
       <FileNumber>15</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>..\OS_Tasks\esp.c</PathWithFileName>

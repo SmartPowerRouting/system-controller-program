@@ -12,11 +12,7 @@
 #ifndef __ESP_H
 #define __ESP_H
 
-#include "main.h"
-#include "usart.h"
-#include "gpio.h"
-#include "printf.h"
-#include "string.h"
+#include <stdint.h>
 
 // status code of response
 #define ESP_OK 0

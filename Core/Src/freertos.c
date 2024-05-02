@@ -26,10 +26,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 // peripherals
+#include <string.h>
 #include "lcd.h"
 #include "usart.h"
-
+#include "tim.h"
 #include "esp.h"
+#include "adc.h"
 #include "dcdc_pid.h"
 
 /* USER CODE END Includes */
@@ -52,6 +54,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 extern uint8_t os_running;
+extern uint32_t adc1_data[6];
 /* USER CODE END Variables */
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
@@ -113,10 +116,15 @@ osTimerId_t tmr_report_pwrHandle;
 const osTimerAttr_t tmr_report_pwr_attributes = {
   .name = "tmr_report_pwr"
 };
-/* Definitions for wifi_connected */
-osEventFlagsId_t wifi_connectedHandle;
-const osEventFlagsAttr_t wifi_connected_attributes = {
-  .name = "wifi_connected"
+/* Definitions for adc_mutex */
+osMutexId_t adc_mutexHandle;
+const osMutexAttr_t adc_mutex_attributes = {
+  .name = "adc_mutex"
+};
+/* Definitions for lcd_mutex */
+osMutexId_t lcd_mutexHandle;
+const osMutexAttr_t lcd_mutex_attributes = {
+  .name = "lcd_mutex"
 };
 /* Definitions for mqttsrv_connected */
 osEventFlagsId_t mqttsrv_connectedHandle;
@@ -162,6 +170,12 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of adc_mutex */
+  adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
+
+  /* creation of lcd_mutex */
+  lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -216,10 +230,6 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
-  /* Create the event(s) */
-  /* creation of wifi_connected */
-  wifi_connectedHandle = osEventFlagsNew(&wifi_connected_attributes);
-
   /* creation of mqttsrv_connected */
   mqttsrv_connectedHandle = osEventFlagsNew(&mqttsrv_connected_attributes);
 
@@ -248,19 +258,53 @@ void MX_FREERTOS_Init(void) {
 void pwr_monitor_tsk(void *argument)
 {
   /* USER CODE BEGIN pwr_monitor_tsk */
-	uint32_t adc_value_buff[6];
+  uint32_t adc_value_buff[6];
+  float mmc_voltage, mmc_current, mmc_power, bkup_voltage, bkup_current, bkup_power, out_voltage, out_current, out_power;
 	
+	//LCD_Clear();
+
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osMutexAcquire(adc_mutexHandle, osWaitForever);
+    memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
+    osMutexRelease(adc_mutexHandle);
+
+    // calculate real-time power info
+    mmc_voltage = adc_value_buff[0] * 3.3 / 4095 * 11.0;
+    mmc_current = adc_value_buff[1] * 3.3 / 4095 * 11.0;
+    mmc_power = mmc_voltage * mmc_current;
+
+    bkup_voltage = adc_value_buff[2] * 3.3 / 4095 * 11.0;
+    bkup_current = adc_value_buff[3] * 3.3 / 4095 * 11.0;
+    bkup_power = bkup_voltage * bkup_current;
+
+    out_voltage = adc_value_buff[4] * 3.3 / 4095 * 11.0;
+    out_current = adc_value_buff[5] * 3.3 / 4095 * 11.0;
+    out_power = out_voltage * out_current;
+
+    // display on LCD
+    osMutexAcquire(lcd_mutexHandle, osWaitForever);
+
+    LCD_DisplayNumber(0, 20, adc_value_buff[0], 4);
+    LCD_DisplayNumber(0, 40, adc_value_buff[3], 4);
+
+    LCD_DisplayNumber(0, 80, adc_value_buff[1], 4);
+    LCD_DisplayNumber(0, 100, adc_value_buff[4], 4);
+
+    LCD_DisplayNumber(0, 140, adc_value_buff[2], 4);
+    LCD_DisplayNumber(0, 160, adc_value_buff[5], 4);
+    osMutexRelease(lcd_mutexHandle);
+
+    osDelay(1000);
   }
   /* USER CODE END pwr_monitor_tsk */
 }
 
 /* USER CODE BEGIN Header_led_blink_tsk */
 /**
-* @brief Function implementing the led_blink thread.
+* @brief LED blink, and also the main task for the system
+*        It as well handles the panic button.
 * @param argument: Not used
 * @retval None
 */
@@ -269,33 +313,34 @@ void led_blink_tsk(void *argument)
 {
   /* USER CODE BEGIN led_blink_tsk */
   /* Infinite loop */
-	uint8_t eb_handled = 0;
-	os_running = 1;
+  uint8_t eb_handled = 0;
+  os_running = 1;
   osTimerStart(tmr_report_pwrHandle, 500);
-	HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
   for(;;)
   {
     HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
-		if (eb_scan())
-		{
-			LCD_DisplayString(0, 200, "EB Pressed");
-			eb_handled = 1;
-			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
-			osThreadSuspend(dcdc_ctrlHandle);
-			// TODO: Cut off power sources and set duty ratio to zero
-		}
+    if (eb_scan())
+    {
+      LCD_DisplayString(0, 200, "EB Pressed");
+      eb_handled = 1;
+      HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
+      osThreadSuspend(dcdc_ctrlHandle);
+      // TODO: Cut off power sources and set duty ratio to zero
+    }
     while (eb_scan())
     {
       osDelay(1);
     }
-		if (!eb_scan() && eb_handled)
-		{
-			LCD_ClearRect(0, 200, 280, 20);
-			HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
-			osThreadResume(dcdc_ctrlHandle);
-			// TODO: Check if the power should be resumed??
-		}
+    if (!eb_scan() && eb_handled)
+    {
+      LCD_ClearRect(0, 200, 280, 20);
+      HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
+      osThreadResume(dcdc_ctrlHandle);
+      eb_handled = 0;
+      // TODO: Check if the power should be resumed??
+    }
     osDelay(500);
   }
   /* USER CODE END led_blink_tsk */
