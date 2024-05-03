@@ -55,16 +55,6 @@ sysPwrData_t sys_pwr_report = {0};
 // For user command
 usrCmd_t usr_cmd = {0};
 
-/**
- * @brief Extract and analyze response from ESP-12F
- *
- * @return uint8_t
- */
-uint8_t esp_get_response()
-{
-  return ESP_OK;
-}
-// extract response from ESP8266 msg queue
 
 /**
  * @brief ESP-12F initialization
@@ -113,11 +103,12 @@ void esp_init(void)
   // Connect to WiFi
   sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-  while (strstr(uart2_rx_data, "\r\nOK\r\n"))
+  while (strstr(uart2_rx_data, "\r\nOK\r\n") == NULL)
   {
-    HAL_Delay(10);
+    HAL_Delay(100);
     if (strstr(uart2_rx_data, "\r\nERROR\r\n"))
     {
+      HAL_Delay(100);
       HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     }
   }

@@ -38,6 +38,7 @@ typedef struct
 
 // Function prototypes
 void esp_init(void);
-uint8_t esp_get_response();
+void esp_msg_tsk(void *argument);
+void tmr_report_pwr_clbk(void *argument);
 
 #endif // __ESP_H
