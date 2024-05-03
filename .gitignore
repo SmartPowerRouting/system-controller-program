@@ -77,3 +77,4 @@
 # End of https://www.toptal.com/developers/gitignore/api/keil,visualstudiocode
 
 MDK-ARM/system-controller-program/*
+OS_Tasks/srv_info_private.h

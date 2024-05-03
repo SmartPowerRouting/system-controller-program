@@ -26,12 +26,14 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 // peripherals
+#include <string.h>
 #include "tim.h"
 #include "lcd.h"
 #include "usart.h"
 #include "adc.h"
 #include "esp.h"
 #include "dcdc_pid.h"
+#include "os_events.h"
 
 /* USER CODE END Includes */
 
@@ -64,91 +66,67 @@ sysPwrData_t sys_pwr = {0};
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
 const osThreadAttr_t pwr_monitor_attributes = {
-  .name = "pwr_monitor",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "pwr_monitor",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_msg */
 osThreadId_t esp_msgHandle;
 const osThreadAttr_t esp_msg_attributes = {
-  .name = "esp_msg",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "esp_msg",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for dcdc_ctrl */
 osThreadId_t dcdc_ctrlHandle;
 const osThreadAttr_t dcdc_ctrl_attributes = {
-  .name = "dcdc_ctrl",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "dcdc_ctrl",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for led_blink */
 osThreadId_t led_blinkHandle;
 const osThreadAttr_t led_blink_attributes = {
-  .name = "led_blink",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "led_blink",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_rx_queue */
 osMessageQueueId_t esp_rx_queueHandle;
 const osMessageQueueAttr_t esp_rx_queue_attributes = {
-  .name = "esp_rx_queue"
-};
+    .name = "esp_rx_queue"};
 /* Definitions for esp_tx_queue */
 osMessageQueueId_t esp_tx_queueHandle;
 const osMessageQueueAttr_t esp_tx_queue_attributes = {
-  .name = "esp_tx_queue"
-};
+    .name = "esp_tx_queue"};
 /* Definitions for usr_cmd_queue */
 osMessageQueueId_t usr_cmd_queueHandle;
 const osMessageQueueAttr_t usr_cmd_queue_attributes = {
-  .name = "usr_cmd_queue"
-};
+    .name = "usr_cmd_queue"};
 /* Definitions for dcdc_param_queue */
 osMessageQueueId_t dcdc_param_queueHandle;
 const osMessageQueueAttr_t dcdc_param_queue_attributes = {
-  .name = "dcdc_param_queue"
-};
+    .name = "dcdc_param_queue"};
 /* Definitions for tmr_report_pwr */
 osTimerId_t tmr_report_pwrHandle;
 const osTimerAttr_t tmr_report_pwr_attributes = {
-  .name = "tmr_report_pwr"
-};
+    .name = "tmr_report_pwr"};
 /* Definitions for adc_mutex */
 osMutexId_t adc_mutexHandle;
 const osMutexAttr_t adc_mutex_attributes = {
-  .name = "adc_mutex"
-};
+    .name = "adc_mutex"};
 /* Definitions for lcd_mutex */
 osMutexId_t lcd_mutexHandle;
 const osMutexAttr_t lcd_mutex_attributes = {
-  .name = "lcd_mutex"
-};
-/* Definitions for wifi_connected */
-osEventFlagsId_t wifi_connectedHandle;
-const osEventFlagsAttr_t wifi_connected_attributes = {
-  .name = "wifi_connected"
-};
-/* Definitions for mqttsrv_connected */
-osEventFlagsId_t mqttsrv_connectedHandle;
-const osEventFlagsAttr_t mqttsrv_connected_attributes = {
-  .name = "mqttsrv_connected"
-};
-/* Definitions for mmc_en */
-osEventFlagsId_t mmc_enHandle;
-const osEventFlagsAttr_t mmc_en_attributes = {
-  .name = "mmc_en"
-};
-/* Definitions for bkup_en */
-osEventFlagsId_t bkup_enHandle;
-const osEventFlagsAttr_t bkup_en_attributes = {
-  .name = "bkup_en"
-};
-/* Definitions for pwr_ovld */
-osEventFlagsId_t pwr_ovldHandle;
-const osEventFlagsAttr_t pwr_ovld_attributes = {
-  .name = "pwr_ovld"
-};
+    .name = "lcd_mutex"};
+/* Definitions for ntwk_stat */
+osEventFlagsId_t ntwk_statHandle;
+const osEventFlagsAttr_t ntwk_stat_attributes = {
+    .name = "ntwk_stat"};
+/* Definitions for sys_pwr_stat */
+osEventFlagsId_t sys_pwr_statHandle;
+const osEventFlagsAttr_t sys_pwr_stat_attributes = {
+    .name = "sys_pwr_stat"};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -164,11 +142,12 @@ extern void tmr_report_pwr_clbk(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -197,16 +176,16 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of esp_rx_queue */
-  esp_rx_queueHandle = osMessageQueueNew (8, 255, &esp_rx_queue_attributes);
+  esp_rx_queueHandle = osMessageQueueNew(8, 255, &esp_rx_queue_attributes);
 
   /* creation of esp_tx_queue */
-  esp_tx_queueHandle = osMessageQueueNew (8, 255, &esp_tx_queue_attributes);
+  esp_tx_queueHandle = osMessageQueueNew(8, 255, &esp_tx_queue_attributes);
 
   /* creation of usr_cmd_queue */
-  usr_cmd_queueHandle = osMessageQueueNew (5, 2, &usr_cmd_queue_attributes);
+  usr_cmd_queueHandle = osMessageQueueNew(5, 2, &usr_cmd_queue_attributes);
 
   /* creation of dcdc_param_queue */
-  dcdc_param_queueHandle = osMessageQueueNew (16, 10, &dcdc_param_queue_attributes);
+  dcdc_param_queueHandle = osMessageQueueNew(16, 10, &dcdc_param_queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -229,25 +208,15 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
-  /* creation of wifi_connected */
-  wifi_connectedHandle = osEventFlagsNew(&wifi_connected_attributes);
+  /* creation of ntwk_stat */
+  ntwk_statHandle = osEventFlagsNew(&ntwk_stat_attributes);
 
-  /* creation of mqttsrv_connected */
-  mqttsrv_connectedHandle = osEventFlagsNew(&mqttsrv_connected_attributes);
-
-  /* creation of mmc_en */
-  mmc_enHandle = osEventFlagsNew(&mmc_en_attributes);
-
-  /* creation of bkup_en */
-  bkup_enHandle = osEventFlagsNew(&bkup_en_attributes);
-
-  /* creation of pwr_ovld */
-  pwr_ovldHandle = osEventFlagsNew(&pwr_ovld_attributes);
+  /* creation of sys_pwr_stat */
+  sys_pwr_statHandle = osEventFlagsNew(&sys_pwr_stat_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-
 }
 
 /* USER CODE BEGIN Header_pwr_monitor_tsk */
@@ -261,49 +230,84 @@ void pwr_monitor_tsk(void *argument)
 {
   /* USER CODE BEGIN pwr_monitor_tsk */
   uint32_t adc_value_buff[6];
+  uint32_t adc_value_accumulate[6];
   osMutexAcquire(adc_mutexHandle, osWaitForever);
   LCD_Clear();
   osMutexRelease(adc_mutexHandle);
   /* Infinite loop */
   for (;;)
   {
-    if (osMutexAcquire(adc_mutexHandle, osWaitForever) == osOK)
+    // get ADC data 10 times
+    memset(adc_value_accumulate, 0, sizeof(adc_value_accumulate));
+    for (uint8_t i = 0; i < 10; i++)
     {
-      memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
-      osMutexRelease(adc_mutexHandle);
-
-      // Calculate power data
-      sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT;
-      sys_pwr.mmc.current = (2.5 - (adc_value_buff[1] / ADC_COEFFICIENT)) / 0.1;
-      sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
-      sys_pwr.bkup.voltage = adc_value_buff[2] / ADC_COEFFICIENT;
-      sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
-      sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
-      sys_pwr.out.voltage = adc_value_buff[4] / ADC_COEFFICIENT;
-      sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
-      sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
+      // get ADC data
+      if (osMutexAcquire(adc_mutexHandle, osWaitForever) == osOK)
+      {
+        memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
+        osMutexRelease(adc_mutexHandle);
+        for (uint8_t j = 0; j < 6; j++)
+        {
+          adc_value_accumulate[j] += adc_value_buff[j];
+        }
+      }
     }
-
-
-    if (osMutexAcquire(lcd_mutexHandle, 0) == osOK)
+    // get average ADC data
+    for (uint8_t i = 0; i < 6; i++)
     {
-      // Display ADC Data
-      LCD_DisplayDecimals(50,0,sys_pwr.mmc.voltage, 5, 2);
-      LCD_DisplayDecimals(50,20,sys_pwr.mmc.current, 5, 2);
-      LCD_DisplayDecimals(50,40,sys_pwr.mmc.power, 5, 2);
-      LCD_DisplayDecimals(50,60,sys_pwr.bkup.voltage, 5, 2);
-      LCD_DisplayDecimals(50,80,sys_pwr.bkup.current, 5, 2);
-      LCD_DisplayDecimals(50,100,sys_pwr.bkup.power, 5, 2);
-      LCD_DisplayDecimals(50,120,sys_pwr.out.voltage, 5, 2);
-      LCD_DisplayDecimals(50,140,sys_pwr.out.current, 5, 2);
-      LCD_DisplayDecimals(50,160,sys_pwr.out.power, 5, 2);
+      adc_value_buff[i] = adc_value_accumulate[i] / 10;
+    }
+    // Calculate power data
+    sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT;
+    sys_pwr.mmc.current = (2.5 - (adc_value_buff[1] / ADC_COEFFICIENT)) / 0.1;
+    sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
+    sys_pwr.bkup.voltage = adc_value_buff[2] / ADC_COEFFICIENT;
+    sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
+    sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
+    sys_pwr.out.voltage = adc_value_buff[4] / ADC_COEFFICIENT;
+    sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
+    sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
+  }
+
+  // Display ADC Data to LCD
+  if (osMutexAcquire(lcd_mutexHandle, 0) == osOK)
+  {
+    // Display ADC Data
+    LCD_DisplayDecimals(50, 0, sys_pwr.mmc.voltage, 5, 2);
+    LCD_DisplayDecimals(50, 20, sys_pwr.mmc.current, 5, 2);
+    LCD_DisplayDecimals(50, 40, sys_pwr.mmc.power, 5, 2);
+    LCD_DisplayDecimals(50, 60, sys_pwr.bkup.voltage, 5, 2);
+    LCD_DisplayDecimals(50, 80, sys_pwr.bkup.current, 5, 2);
+    LCD_DisplayDecimals(50, 100, sys_pwr.bkup.power, 5, 2);
+    LCD_DisplayDecimals(50, 120, sys_pwr.out.voltage, 5, 2);
+    LCD_DisplayDecimals(50, 140, sys_pwr.out.current, 5, 2);
+    LCD_DisplayDecimals(50, 160, sys_pwr.out.power, 5, 2);
+    osMutexRelease(lcd_mutexHandle);
+  }
+
+  if (sys_pwr.mmc.power > 150 || sys_pwr.bkup.power > 150 || sys_pwr.out.power > 150)
+  {
+    osEventFlagsSet(sys_pwr_statHandle, SYS_OVERLD);
+    // disable DCDC
+    osThreadSuspend(dcdc_ctrlHandle);
+
+    // set timer duty ratio to zero
+    HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+
+    // display info on LCD
+    if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+    {
+      // use red pen and white background
+      LCD_SetColor(LCD_RED);
+      LCD_SetBackColor(LCD_WHITE);
+      LCD_SetTextFont(&ASCII_Font20);
+      LCD_DisplayString(0, 200, "Power Overload");
       osMutexRelease(lcd_mutexHandle);
     }
-
-    osDelay(1000);
   }
-  /* USER CODE END pwr_monitor_tsk */
+  osDelay(1000);
 }
+/* USER CODE END pwr_monitor_tsk */
 
 /* USER CODE BEGIN Header_led_blink_tsk */
 /**
@@ -359,4 +363,3 @@ void led_blink_tsk(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

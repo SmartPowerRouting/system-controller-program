@@ -16,20 +16,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "srv_info_private.h"
 
 uint8_t esp_response[255] = {0};
-
-// AP info
-const char *WIFI_SSID = "WindPwr_Demo";
-const char *WIFI_PWD = "WindPwr666";
-
-// user info
-#define MQTT_USER "WindPwr"
-#define MQTT_PWD "WindPwr666"
-
-// mqtt broker info
-#define MQTT_BROKER "iot.zjui.top"
-#define MQTT_PORT 1883
 
 // mqtt client info
 #define MQTT_CLIENT_ID "WindPwr"
@@ -47,14 +36,14 @@ const char *WIFI_PWD = "WindPwr666";
 
 extern uint8_t uart2_rx_data[255];   // UART2 DMA buffer
 extern uint8_t uart2_rx_flag;        // Flag to indicate that UART2 DMA has received data
-extern uint8_t mqtt_recv_topic[255]; // MQTT received topic
-extern uint8_t mqtt_recv_msg[255];   // MQTT received message
+uint8_t mqtt_recv_topic[255]; // MQTT received topic
+uint8_t mqtt_recv_msg[255];   // MQTT received message
 
 extern uint32_t adc1_data[6]; // ADC data
 
 // Message queues
-extern osMessageQueueId_t esp_rx_queueHandle; // ESP message queue
-extern osMessageQueueId_t esp_tx_queueHandle; // MQTT message queue
+extern osMessageQueueId_t esp_rx_queueHandle;  // ESP message queue
+extern osMessageQueueId_t esp_tx_queueHandle;  // MQTT message queue
 extern osMessageQueueId_t usr_cmd_queueHandle; // User command queue
 
 // mutexes
@@ -163,15 +152,18 @@ void esp_msg_tsk(void *argument)
 {
   for (;;)
   {
+    osDelay(50);
     uint8_t buff[255] = {0};
-    // handle message that is to transmit
+    uint8_t dummy; // dummy variable to store the message length
+    
+    // Send Message
     if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
     {
       HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
-      osDelay(50); // Have to wait until the last transmit ends,
-                   // otherwise DMA does not have enough time
+      osDelay(200);
     }
 
+    // Receive message
     if (osMessageQueueGet(esp_rx_queueHandle, buff, NULL, 0) == osOK)
     {
       osMessageQueueGet(esp_rx_queueHandle, buff, NULL, osWaitForever);
@@ -179,31 +171,75 @@ void esp_msg_tsk(void *argument)
 
       // Analyze the response from ESP8266
       // Case a): MQTT received message with topic and payload
-      if (strstr(buff, "+MQTTRECV") != NULL)
+      if (strstr(buff, "+MQTTSUBRECV") != NULL)
       {
         // Extract topic and message
-        sscanf(buff, "+MQTTRECV=%[^,],%[^,],%s", mqtt_recv_topic, mqtt_recv_msg); // TODO: Message Extraction
+        sscanf(buff, "+MQTTSUBRECV=0, \"%s\", %d, %s\r\n", mqtt_recv_topic, &dummy, mqtt_recv_msg); // TODO: Message Extraction
         // Handle the message
         if (strstr(mqtt_recv_topic, MQTT_TOPIC_USR_CMD))
         {
-          // Handle user command
-          if (strstr(mqtt_recv_msg, "ON"))
+          usr_cmd.cmdType = mqtt_recv_msg[0] - '0';
+          switch (usr_cmd.cmdType)
           {
-            usr_cmd.cmdType = CMD_SET_PWR_STAT;
-            usr_cmd.cmdValue = CMD_PWR_ON;
-            osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 0);
-          }
-          else if (strstr(mqtt_recv_msg, "OFF"))
-          {
-            // TODO: Turn off the power sources
+          case CMD_SET_PWR_STAT:
+            usr_cmd.cmdValue = mqtt_recv_msg[1] - '0';
+            osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 1, 100);
+            // TODO: Error handler
+            break;
+          
+          case CMD_SET_VOLTAGE:
+            usr_cmd.cmdValue = (mqtt_recv_msg[1] - '0') * 10 + (mqtt_recv_msg[2] - '0');
+            osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 1, 100);
+            // TODO: Error handler
+            break;
+          
+          default:
+            break;
           }
         }
       }
 
-      osDelay(50);
+      // Case b): MQTT Connected
+      if (strstr(buff, "+MQTTDISCONNECTED") != 0)
+      {
+        HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
+        // mqtt user cfg
+        sprintf(buff, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", (uint8_t *)MQTT_USER, (uint8_t *)MQTT_USER, (uint8_t *)MQTT_PWD);
+        osMessageQueuePut(esp_tx_queueHandle, buff, 1, 0);
+
+        // mqtt connection
+        sprintf(buff, "AT+MQTTCONN=0,\"%s\",%d,0\r\n", (uint8_t *)MQTT_BROKER, MQTT_PORT);
+        osMessageQueuePut(esp_tx_queueHandle, buff, 1, 0);
+      }
     }
+
+    if (strstr(buff, "WIFI DISCONNECT") != NULL) // WiFi Disconnect
+    {
+      HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
+      // NOTE: No need to manually reconnect to WiFi, it will automatically reconnect
+      
+      // todo: add event flags
+    }
+
+    if (strstr(buff, "WIFI CONNECTED") != NULL) // WiFi Reconnected
+    {
+      HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
+      uint8_t cmd[255] = {0};
+      // user config
+      sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", (uint8_t *)MQTT_USER, (uint8_t *)MQTT_USER, (uint8_t *)MQTT_PWD);
+      osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
+      // mqtt connection
+      sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d,0\r\n", (uint8_t *)MQTT_BROKER, MQTT_PORT);
+      osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
+      // subscription
+      sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", (uint8_t *)MQTT_TOPIC_USR_CMD);
+      osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
+    }
+
+    osDelay(50);
   }
 }
+
 
 /**
  * @brief Real-time power transmission to ESP using a Timer, this is the callback fcn
@@ -237,7 +273,7 @@ void tmr_report_pwr_clbk(void *argument)
           sys_pwr_report.bkup.voltage,
           sys_pwr_report.bkup.current,
           sys_pwr_report.bkup.power);
-          // TODO: Fix the power report message
+  // TODO: Fix the power report message
 
   osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }

@@ -19,17 +19,13 @@
 #define ESP_ERR 1
 
 // type of user commands
-#define CMD_SET_VOLTAGE 0
-#define CMD_SET_PWR_SRC 1   // Use MMC or backup
-#define CMD_SET_PWR_STAT 2  // Output ON/OFF
-
-// For CMD_SET_PWR_SRC command:
-#define CMD_USE_MMC 0
-#define CMD_USE_BKUP 1
+#define CMD_SET_VOLTAGE 1
+#define CMD_SET_PWR_STAT 0   // Use MMC or backup
 
 // For setting power status:
 #define CMD_PWR_OFF 0
-#define CMD_PWR_ON 1
+#define CMD_PWR_USE_MMC 1
+#define CMD_PWR_USE_BKUP 2
 
 // User command structure
 typedef struct

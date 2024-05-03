@@ -24,7 +24,6 @@ extern uint32_t adc1_data[6];
 
 // message queues
 extern osMessageQueueId_t dcdc_param_queueHandle;
-dcdcParams_t dcdc_params;
 
 // PID parameters
 float Kp = 0.25;
