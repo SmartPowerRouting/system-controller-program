@@ -90,10 +90,20 @@ void esp_init(void)
   HAL_Delay(2000);
   LCD_DisplayString(0, 40, "ESP8266 restore success");
 
+  // turn off echo
+  sprintf(cmd, "ATE0\r\n");
+  HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+  while (!uart2_rx_flag)
+  {
+    // wait for response
+  }
+  uart2_rx_flag = 0;
+  HAL_Delay(1000);
+
   // Set station mode
   sprintf(cmd, "AT+CWMODE=1\r\n");
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-  while (strstr(uart2_rx_data, "\r\nOK\r\n"))
+  while (uart2_rx_data != "OK\r\n")
   {
     HAL_Delay(10);
   }
@@ -256,14 +266,18 @@ void tmr_report_pwr_clbk(void *argument)
   sys_pwr_report.out.current = (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1;
   sys_pwr_report.out.power = sys_pwr_report.out.voltage * sys_pwr_report.out.current;
 
-  sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%2.2f%2.2f%2.2f%2.2f%2.2f%2.2f\",2,0\r\n",
+  sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%2.2f%2.2f%2.2f%2.2f%2.2f%2.2f%2.2f%2.2f%2.2f,2,0\r\n",
           (uint8_t *)MQTT_TOPIC_STATUS,
           sys_pwr_report.mmc.voltage,
           sys_pwr_report.mmc.current,
           sys_pwr_report.mmc.power,
           sys_pwr_report.bkup.voltage,
           sys_pwr_report.bkup.current,
-          sys_pwr_report.bkup.power);
+          sys_pwr_report.bkup.power,
+          sys_pwr_report.out.voltage,
+          sys_pwr_report.out.current,
+          sys_pwr_report.out.power);
+
   // TODO: Fix the power report message
 
   osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);

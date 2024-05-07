@@ -335,8 +335,14 @@ void USART2_IRQHandler(void)
     uart2_rx_data_len = tmp_len;
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
-		if (!os_running) printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
-    osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
+		if (!os_running)
+    {
+      printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+    }
+    if (uart2_rx_data != "OK\r\n" && uart2_rx_data != "ERROR\r\n")
+    {
+      osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
+    }
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
   }
   /* USER CODE END USART2_IRQn 0 */
