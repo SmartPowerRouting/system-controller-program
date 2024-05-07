@@ -149,7 +149,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void)
 {
   /* USER CODE BEGIN Init */
-
+  os_running = 1;
   /* USER CODE END Init */
   /* Create the mutex(es) */
   /* creation of adc_mutex */
@@ -321,7 +321,6 @@ void led_blink_tsk(void *argument)
   /* USER CODE BEGIN led_blink_tsk */
   /* Infinite loop */
   uint8_t eb_handled = 0;
-  os_running = 1;
   osTimerStart(tmr_report_pwrHandle, 1000);
   HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
   for (;;)

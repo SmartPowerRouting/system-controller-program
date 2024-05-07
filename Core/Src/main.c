@@ -116,14 +116,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   // LCD initialization
   SPI_LCD_Init ();
-
-  // Now turn on LCD backlight
-  LCD_Backlight_ON;
-	LCD_SetBackColor(LCD_WHITE);
-	LCD_SetColor(LCD_BLACK);
-	LCD_SetAsciiFont(&ASCII_Font20);
-	LCD_Clear();
-  LCD_DisplayString(0, 0, "System starting...");
+  LCD_UI_Init();
 
   // Make sure power supply is off
   HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);

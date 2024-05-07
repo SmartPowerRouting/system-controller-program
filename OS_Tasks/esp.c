@@ -69,11 +69,6 @@ void esp_init(void)
   sprintf(cmd, "AT\r\n");
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
 
-  while (!uart2_rx_flag)
-  {
-    // wait for response
-  }
-  uart2_rx_flag = 0;
   HAL_Delay(1000);
 
   // Perform reset
@@ -82,11 +77,7 @@ void esp_init(void)
 
   sprintf(cmd, "AT+RESTORE\r\n");
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-  while (!uart2_rx_flag)
-  {
-    // wait for response
-  }
-  uart2_rx_flag = 0;
+
   HAL_Delay(2000);
   LCD_DisplayString(0, 40, "ESP8266 restore success");
 
@@ -95,7 +86,7 @@ void esp_init(void)
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
   while (!uart2_rx_flag)
   {
-    // wait for response
+    HAL_Delay(10);
   }
   uart2_rx_flag = 0;
   HAL_Delay(1000);
@@ -103,7 +94,7 @@ void esp_init(void)
   // Set station mode
   sprintf(cmd, "AT+CWMODE=1\r\n");
   HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-  while (uart2_rx_data != "OK\r\n")
+  while (uart2_rx_data != "\r\nOK\r\n")
   {
     HAL_Delay(10);
   }

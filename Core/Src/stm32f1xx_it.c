@@ -339,7 +339,7 @@ void USART2_IRQHandler(void)
     {
       printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
     }
-    if (uart2_rx_data != "OK\r\n" && uart2_rx_data != "ERROR\r\n")
+    else if (os_running && uart2_rx_data != "\r\nOK\r\n" && uart2_rx_data != "\r\nERROR\r\n")
     {
       osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     }

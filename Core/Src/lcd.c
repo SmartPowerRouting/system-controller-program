@@ -4,6 +4,8 @@
  * @brief  ST7789 LCD Driver implementation.
  * @version 0.1
  * @date 2024-04-12
+ * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024 Project 19,
+ * and is modified based on the drivers provided by KE, the manufacturer of the LCD screen.
  *
  * * IMPORTANT NOTES:
  * * 1. The screen configuration is 16-bit RGB565 format.
@@ -1300,6 +1302,28 @@ LCD_DrawImage (uint16_t x, uint16_t y, uint16_t width, uint16_t height,
     }
 }
 
-/**************************************************************************************************************************************************************************************************************************************************************************极客KE***/
 // 实验平台：极客 STM32F1核心板
 //
+
+/**
+ * @brief System UI initialization.
+ * 
+ */
+#define LCD_WIFI_SSID_X
+void LCD_UI_Init()
+{
+  LCD_SetBackColor(LCD_WHITE);
+	LCD_SetColor(LCD_BLACK);
+	LCD_SetAsciiFont(&ASCII_Font24);
+	LCD_Clear();
+
+  LCD_DisplayString(102, 92, "MMC");
+  LCD_DisplayString(84, 164, "BACKUP");
+  LCD_DisplayString(42, 236, "SYSTEM OUTPUT");
+
+  LCD_SetAsciiFont(&ASCII_Font12);
+  LCD_DisplayString(0, 0, "WIFI: ");
+  LCD_DisplayString(0, 12, "NETWORK IP: ");
+  LCD_DisplayString(0, 24, "MQTT BROKER: ");
+  LCD_DisplayString(0, 36, "MQTT CLIENT ID: ");
+}
