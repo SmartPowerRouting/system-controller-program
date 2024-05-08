@@ -44,7 +44,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define OVERLOAD_LIMIT 20 // in W
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -257,6 +257,8 @@ void pwr_monitor_tsk(void *argument)
             // if (0) {
             //  Display ADC Data
             LCD_SetAsciiFont(&ASCII_Font20);
+            LCD_SetColor(LCD_BLACK);
+            LCD_SetBackColor(LCD_WHITE);
             LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, sys_pwr.mmc.voltage, 5, 2);
             LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, sys_pwr.mmc.current, 5, 2);
             LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, sys_pwr.mmc.power, 5, 2);
@@ -269,9 +271,11 @@ void pwr_monitor_tsk(void *argument)
             osMutexRelease(lcd_mutexHandle);
         }
 
-        if (sys_pwr.mmc.power > 150 || sys_pwr.bkup.power > 150 || sys_pwr.out.power > 150)
+        if (sys_pwr.mmc.power > OVERLOAD_LIMIT || sys_pwr.bkup.power > OVERLOAD_LIMIT ||
+            sys_pwr.out.power > OVERLOAD_LIMIT)
         {
             osEventFlagsSet(sys_statHandle, SYS_OVERLD);
+
             // disable DCDC
             osThreadSuspend(dcdc_ctrlHandle);
 
@@ -316,9 +320,14 @@ void led_blink_tsk(void *argument)
             eb_handled = 1;
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
             HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
-            // osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(0, 200, "EB Pressed");
-            // osMutexRelease(lcd_mutexHandle);
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_ClearRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+            LCD_SetColor(LCD_RED);
+            LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+            LCD_SetColor(LCD_WHITE);
+            LCD_SetBackColor(LCD_RED);
+            LCD_DisplayString(LCD_SYS_STAT_EMERGENCY_STOP_X, LCD_SYS_STAT_EMERGENCY_STOP_Y, "EMERGENCY");
+            osMutexRelease(lcd_mutexHandle);
             osThreadSuspend(dcdc_ctrlHandle);
             // set timer duty ratio to zero
             HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
@@ -330,9 +339,14 @@ void led_blink_tsk(void *argument)
         }
         if (!eb_scan() && eb_handled)
         {
-            // osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_ClearRect(0, 200, 280, 20);
-            // osMutexRelease(lcd_mutexHandle);
+            eb_handled = 0;
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetColor(LCD_GREEN);
+            LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+            LCD_SetColor(LCD_BLACK);
+            LCD_SetBackColor(LCD_GREEN);
+            LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
+            osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
             HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
             osThreadResume(dcdc_ctrlHandle);

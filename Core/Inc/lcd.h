@@ -163,5 +163,16 @@ void LCD_UI_Init();
 #define LCD_MMC_Y 120
 #define LCD_BKUP_Y 192
 #define LCD_OUT_Y 264
+#define LCD_SYS_STAT_NORMAL_X (LCD_Width / 2 - 30)
+#define LCD_SYS_STAT_NORMAL_Y 60
+#define LCD_SYS_STAT_OVLD_X (LCD_Width / 2 - 40)
+#define LCD_SYS_STAT_OVLD_Y 60
+#define LCD_SYS_STAT_EMERGENCY_STOP_X (LCD_Width / 2 - 45)
+#define LCD_SYS_STAT_EMERGENCY_STOP_Y 60
+#define LCD_SYS_STAT_BOX_X 17
+#define LCD_SYS_STAT_BOX_Y 56
+#define LCD_SYS_STAT_BOX_WIDTH (LCD_Width - 32)
+#define LCD_SYS_STAT_BOX_HEIGHT 28
+
 
 #endif // __LCD_H
