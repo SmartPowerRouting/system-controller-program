@@ -11,8 +11,8 @@
 
 #include "dcdc_pid.h"
 #include "FreeRTOS.h"
-#include "task.h"
 #include "cmsis_os.h"
+#include "task.h"
 
 #include "tim.h"
 
@@ -74,4 +74,15 @@ void dcdc_ctrl_tsk(void *argument)
 
         osDelay(1);
     }
+}
+
+/**
+ * @brief Round a float number to the nearest integer.
+ *
+ * @param f
+ * @return uint16_t
+ */
+uint16_t round_float(float f)
+{
+    return (uint16_t)(f + 0.5);
 }

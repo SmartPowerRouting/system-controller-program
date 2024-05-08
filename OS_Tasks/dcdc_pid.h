@@ -14,5 +14,6 @@
 
 // Function prototypes
 void dcdc_ctrl_tsk(void *argument);
+uint16_t round_float(float f);
 
 #endif // __DCDC_PID_H

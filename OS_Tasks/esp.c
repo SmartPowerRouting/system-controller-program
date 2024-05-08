@@ -41,10 +41,9 @@ uint8_t esp_response[255] = {0};
 #define MQTT_TOPIC_USR_CMD "usr/cmd"
 
 extern uint8_t uart2_rx_data[255]; // UART2 DMA buffer
-extern uint8_t
-    uart2_rx_flag; // Flag to indicate that UART2 DMA has received data
-uint8_t mqtt_recv_topic[255]; // MQTT received topic
-uint8_t mqtt_recv_msg[255];   // MQTT received message
+extern uint8_t uart2_rx_flag;      // Flag to indicate that UART2 DMA has received data
+uint8_t mqtt_recv_topic[255];      // MQTT received topic
+uint8_t mqtt_recv_msg[255];        // MQTT received message
 
 extern uint32_t adc1_data[6]; // ADC data
 
@@ -73,7 +72,8 @@ usrCmd_t usr_cmd = {0};
  * @brief ESP-12F initialization
  *
  */
-void esp_init(void) {
+void esp_init(void)
+{
     LCD_DisplayString(0, 20, "ESP8266 initializing...");
     uint8_t cmd[255] = {0};        // Command buffer
     memset(uart2_rx_data, 0, 255); // Clear UART2 buffer
@@ -84,8 +84,7 @@ void esp_init(void) {
     HAL_Delay(1000);
 
     // Perform reset
-    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin,
-                      GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
 
     sprintf(cmd, "AT+RESTORE\r\n");
@@ -105,8 +104,7 @@ void esp_init(void) {
     HAL_Delay(1000);
 
     // Connect to WiFi
-    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID,
-            (uint8_t *)WIFI_PWD);
+    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
     HAL_Delay(8000);
@@ -124,8 +122,7 @@ void esp_init(void) {
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     HAL_Delay(1000);
 
-    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"hello world\",2,0\r\n",
-            (uint8_t *)MQTT_TOPIC_STATUS);
+    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"hello world\",2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     HAL_Delay(1000);
 }
@@ -134,13 +131,13 @@ void esp_init(void) {
  * @brief ESP-12F initialization (in OS)
  *
  */
-void esp_init_os(void) {
-	  osDelay(1000);
+void esp_init_os(void)
+{
+    osDelay(1000);
     uint8_t esp_response_buff[255] = {0}; // ESP response buffer (privately
                                           // used in this function)
     // Perform reset
-    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin,
-                      GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
     osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT | MQTT_CONN_STAT);
 
@@ -148,11 +145,11 @@ void esp_init_os(void) {
     osMutexAcquire(lcd_mutexHandle, osWaitForever);
     LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Initializing...");
     osMutexRelease(lcd_mutexHandle);
-    uint8_t cmd[255] = {0};        // Command buffer
-		int dummy = uxTaskGetStackHighWaterMark(NULL);
-		osMutexAcquire(lcd_mutexHandle, osWaitForever);
-		LCD_DisplayNumber(0,0,dummy,6);
-		osMutexRelease(lcd_mutexHandle);
+    uint8_t cmd[255] = {0}; // Command buffer
+    int dummy = uxTaskGetStackHighWaterMark(NULL);
+    osMutexAcquire(lcd_mutexHandle, osWaitForever);
+    LCD_DisplayNumber(0, 0, dummy, 6);
+    osMutexRelease(lcd_mutexHandle);
     // randomly send something to avoid the first response from ESP8266
     sprintf(cmd, "AT\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
@@ -175,114 +172,134 @@ void esp_init_os(void) {
     // Set station mode
     sprintf(cmd, "AT+CWMODE=1\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 5000) ==
-        osOK) {
-        if (strstr((char *)esp_response_buff, "OK") != NULL) {
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 5000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") != NULL)
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE=1 OK");
             osMutexRelease(lcd_mutexHandle);
-        } else {
+        }
+        else
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y,
-                              "Set CWMODE Error");
+            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Set CWMODE Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
-    } else {
+    }
+    else
+    {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y,
-                          "Set CWMODE Timeout");
+        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Set CWMODE Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
 
     // Connect to WiFi
-    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID,
-            (uint8_t *)WIFI_PWD);
+    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 8000) ==
-        osOK) {
-        if (strstr((char *)esp_response_buff, "WIFI CONNECTED") != NULL) {
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 8000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "WIFI CONNECTED") != NULL)
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, WIFI_SSID);
             osMutexRelease(lcd_mutexHandle);
-            HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin,
-                              GPIO_PIN_SET);
+            HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
             osEventFlagsSet(sys_statHandle, WIFI_CONN_STAT);
-        } else {
+        }
+        else
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
-    } else {
+    }
+    else
+    {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
 
+    osDelay(3000);
+
     // MQTT configuration
-    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
-            MQTT_CLIENT_ID, MQTT_CLIENT_ID, MQTT_CLIENT_ID);
+    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", MQTT_CLIENT_ID, MQTT_CLIENT_ID,
+            MQTT_CLIENT_ID);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) ==
-        osOK) {
-        if (strstr((char *)esp_response_buff, "OK") != NULL) {
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") != NULL)
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Success");
             osMutexRelease(lcd_mutexHandle);
-        } else {
+        }
+        else
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
-    } else {
+    }
+    else
+    {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
+    osDelay(1000);
 
     sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d\r\n", MQTT_BROKER, MQTT_PORT);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 3000) ==
-        osOK) {
-        if (strstr((char *)esp_response_buff, "OK") != NULL) {
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 3000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") != NULL)
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_X,
-                              "MQTT Connected");
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_X, "MQTT Connected");
             osMutexRelease(lcd_mutexHandle);
-            HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin,
-                              GPIO_PIN_SET);
-        } else {
+            HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
+        }
+        else
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "MQTT Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
-    } else {
+    }
+    else
+    {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "MQTT Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
+    osDelay(1000);
 
-    sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", (uint8_t *)MQTT_TOPIC_USR_CMD);
+    sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", MQTT_TOPIC_USR_CMD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) ==
-        osOK) {
-        if (strstr((char *)esp_response_buff, "OK") == NULL) {
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") == NULL)
+        {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
-    } else {
+    }
+    else
+    {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y,
-                          "Subscribe Timeout");
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Subscribe Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -295,14 +312,17 @@ void esp_init_os(void) {
  *
  * @param argument
  */
-void esp_msg_tsk(void *argument) {
+void esp_msg_tsk(void *argument)
+{
     esp_init_os();
-    for (;;) {
+    for (;;)
+    {
         osDelay(50);
         uint8_t buff[255] = {0};
         uint8_t dummy; // dummy variable to store the message length
         // Send Message
-        if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK) {
+        if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
+        {
             HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
             osDelay(200);
         }
@@ -315,50 +335,44 @@ void esp_msg_tsk(void *argument) {
  *
  * @param argument
  */
-void tmr_report_pwr_clbk(void *argument) {
+void tmr_report_pwr_clbk(void *argument)
+{
     uint32_t adc_to_send[6];
     uint8_t buff[255] = {0};
-    if (osMutexAcquire(adc_mutexHandle, 50) == osOK) {
+    if (osMutexAcquire(adc_mutexHandle, 50) == osOK)
+    {
         memcpy(adc_to_send, (uint32_t *)adc1_data, sizeof(adc_to_send));
         osMutexRelease(adc_mutexHandle);
-    } else {
+    }
+    else
+    {
         return;
     }
 
     // get MQTT connection status; if not connected then return
-    if (!(osEventFlagsGet(sys_statHandle) & MQTT_CONN_STAT)) {
+    if (!(osEventFlagsGet(sys_statHandle) & MQTT_CONN_STAT))
+    {
         return;
     }
 
     // Send data to ESP8266
-    sys_pwr_report.mmc.voltage =
-        voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT);
-    sys_pwr_report.mmc.current = voltage_current_format(
-        (2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.mmc.voltage = voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT);
+    sys_pwr_report.mmc.current = voltage_current_format((2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
     sys_pwr_report.mmc.power =
-        power_format(adc_to_send[0] / ADC_COEFFICIENT *
-                     (2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.bkup.voltage =
-        voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT);
-    sys_pwr_report.bkup.current = voltage_current_format(
-        (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
+        power_format(adc_to_send[0] / ADC_COEFFICIENT * (2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.bkup.voltage = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT);
+    sys_pwr_report.bkup.current = voltage_current_format((2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
     sys_pwr_report.bkup.power =
-        power_format(adc_to_send[2] / ADC_COEFFICIENT *
-                     (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.out.voltage =
-        voltage_current_format(adc_to_send[4] / ADC_COEFFICIENT);
-    sys_pwr_report.out.current = voltage_current_format(
-        (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
+        power_format(adc_to_send[2] / ADC_COEFFICIENT * (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.out.voltage = voltage_current_format(adc_to_send[4] / ADC_COEFFICIENT);
+    sys_pwr_report.out.current = voltage_current_format((2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
     sys_pwr_report.out.power =
-        power_format(adc_to_send[4] / ADC_COEFFICIENT *
-                     (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
+        power_format(adc_to_send[4] / ADC_COEFFICIENT * (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
 
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%4d%4d%4d%4d%4d%4d%4d%4d%4d,2,0\r\n",
-            (uint8_t *)MQTT_TOPIC_STATUS, sys_pwr_report.mmc.voltage,
-            sys_pwr_report.bkup.voltage, sys_pwr_report.out.voltage,
-            sys_pwr_report.mmc.current, sys_pwr_report.bkup.current,
-            sys_pwr_report.out.current, sys_pwr_report.mmc.power,
-            sys_pwr_report.bkup.power, sys_pwr_report.out.power);
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%4d%4d%4d%4d%4d%4d%4d%4d%4d,2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS,
+            sys_pwr_report.mmc.voltage, sys_pwr_report.bkup.voltage, sys_pwr_report.out.voltage,
+            sys_pwr_report.mmc.current, sys_pwr_report.bkup.current, sys_pwr_report.out.current,
+            sys_pwr_report.mmc.power, sys_pwr_report.bkup.power, sys_pwr_report.out.power);
 
     // TODO: Fix the power report message
 
@@ -371,7 +385,10 @@ void tmr_report_pwr_clbk(void *argument) {
  * @param f
  * @return uint16_t
  */
-uint16_t voltage_current_format(float f) { return (uint16_t)(f * 100) % 1000; }
+uint16_t voltage_current_format(float f)
+{
+    return (uint16_t)(f * 100) % 1000;
+}
 
 /**
  * @brief Format power data to 1 decimal places (92.1W-->921)
@@ -379,4 +396,7 @@ uint16_t voltage_current_format(float f) { return (uint16_t)(f * 100) % 1000; }
  * @param f
  * @return uint16_t
  */
-uint16_t power_format(float f) { return (uint16_t)(f * 10) % 10000; }
+uint16_t power_format(float f)
+{
+    return (uint16_t)(f * 10) % 10000;
+}

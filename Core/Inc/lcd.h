@@ -64,16 +64,16 @@
  */
 typedef struct
 {
-  uint32_t Color;       // LCD Pen color
-  uint32_t BackColor;   // LCD Background color
-  uint8_t ShowNum_Mode; // Display Numbers Mode
-  uint8_t Direction;    // Display Direction
-  uint16_t Width;       // Screen pixel width
-  uint16_t Height;      // Screen pixel height
-  uint8_t X_Offset;     // X coordinate offset, used to set the screen controller's
-                        // VRAM write mode
-  uint8_t Y_Offset;     // Y coordinate offset, used to set the screen controller's
-                        // VRAM write mode
+    uint32_t Color;       // LCD Pen color
+    uint32_t BackColor;   // LCD Background color
+    uint8_t ShowNum_Mode; // Display Numbers Mode
+    uint8_t Direction;    // Display Direction
+    uint16_t Width;       // Screen pixel width
+    uint16_t Height;      // Screen pixel height
+    uint8_t X_Offset;     // X coordinate offset, used to set the screen controller's
+                          // VRAM write mode
+    uint8_t Y_Offset;     // Y coordinate offset, used to set the screen controller's
+                          // VRAM write mode
 } LCD_Typedef;
 
 /* LCD Commands */
@@ -96,8 +96,7 @@ void LCD_DisplayText(uint16_t x, uint16_t y, char *pText);
 //>>>>>	Display numbers and floats
 void LCD_ShowNumMode(uint8_t mode);
 void LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number, uint8_t len);
-void LCD_DisplayDecimals(uint16_t x, uint16_t y, double number, uint8_t len,
-                         uint8_t decs);
+void LCD_DisplayDecimals(uint16_t x, uint16_t y, double number, uint8_t len, uint8_t decs);
 
 //>>>>>	Draw 2D shapes
 void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color);
@@ -115,8 +114,7 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
 void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r);
 
 //>>>>> Draw Images
-void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
-                   const uint8_t *pImage);
+void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pImage);
 
 //>>>>>	Display System UI
 void LCD_UI_Init();
@@ -158,5 +156,12 @@ void LCD_UI_Init();
 #define LCD_MQTT_BRKR_Y 16
 #define LCD_MQTT_CLNT_X 105
 #define LCD_MQTT_CLNT_Y 32
+
+#define LCD_VOTAGE_X 6
+#define LCD_CURRENT_X 86
+#define LCD_POWER_X 166
+#define LCD_MMC_Y 112
+#define LCD_BKUP_Y 184
+#define LCD_OUT_Y 256
 
 #endif // __LCD_H

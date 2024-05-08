@@ -42,7 +42,8 @@ uint16_t LCD_Buff[1024]; // Define the LCD buffer area
  *
  * @param lcd_command
  */
-void LCD_WriteCommand(uint8_t lcd_command) {
+void LCD_WriteCommand(uint8_t lcd_command)
+{
     LCD.Direction = Direction_H; // 默认横屏显示
 
     while ((LCD_SPI.Instance->SR & 0x0080) != RESET)
@@ -68,7 +69,8 @@ void LCD_WriteCommand(uint8_t lcd_command) {
  *
  ****************************************************************************************************************************************/
 
-void LCD_WriteData_8bit(uint8_t lcd_data) {
+void LCD_WriteData_8bit(uint8_t lcd_data)
+{
     LCD_SPI.Instance->DR = lcd_data; // 发送数据
     while ((LCD_SPI.Instance->SR & 0x0002) == 0)
         ; // 等待发送缓冲区清空
@@ -83,7 +85,8 @@ void LCD_WriteData_8bit(uint8_t lcd_data) {
  *
  ****************************************************************************************************************************************/
 
-void LCD_WriteData_16bit(uint16_t lcd_data) {
+void LCD_WriteData_16bit(uint16_t lcd_data)
+{
     LCD_SPI.Instance->DR = lcd_data >> 8; // 发送数据，高8位
     while ((LCD_SPI.Instance->SR & 0x0002) == 0)
         ;
@@ -101,7 +104,8 @@ void LCD_WriteData_16bit(uint16_t lcd_data) {
  *
  ****************************************************************************************************************************************/
 
-void LCD_WriteBuff(uint16_t *DataBuff, uint16_t DataSize) {
+void LCD_WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
+{
     uint32_t i;
 
     LCD_SPI.Instance->CR1 &= 0xFFBF; // 关闭SPI
@@ -110,7 +114,8 @@ void LCD_WriteBuff(uint16_t *DataBuff, uint16_t DataSize) {
 
     LCD_CS_L; // 片选拉低，使能IC
 
-    for (i = 0; i < DataSize; i++) {
+    for (i = 0; i < DataSize; i++)
+    {
 
         LCD_SPI.Instance->DR = DataBuff[i];
         while ((LCD_SPI.Instance->SR & 0x0002) == 0)
@@ -132,16 +137,16 @@ void LCD_WriteBuff(uint16_t *DataBuff, uint16_t DataSize) {
  *
  ****************************************************************************************************************************************/
 
-void SPI_LCD_Init(void) {
+void SPI_LCD_Init(void)
+{
     HAL_Delay(10); // 屏幕刚完成复位时（包括上电复位），需要等待5ms才能发送指令
 
     LCD_CS_L; // 片选拉低，使能IC，开始通信
 
-    LCD_WriteCommand(0x36); // 显存访问控制 指令，用于设置访问显存的方式
+    LCD_WriteCommand(0x36);   // 显存访问控制 指令，用于设置访问显存的方式
     LCD_WriteData_8bit(0x00); // 配置成 从上到下、从左到右，RGB像素格式
 
-    LCD_WriteCommand(
-        0x3A); // 接口像素格式 指令，用于设置使用 12位、16位还是18位色
+    LCD_WriteCommand(0x3A);   // 接口像素格式 指令，用于设置使用 12位、16位还是18位色
     LCD_WriteData_8bit(0x05); // 此处配置成 16位 像素格式
 
     // 接下来很多都是电压设置指令，直接使用厂家给设定值
@@ -214,7 +219,7 @@ void SPI_LCD_Init(void) {
     // 退出休眠指令，LCD控制器在刚上电、复位时，会自动进入休眠模式
     // ，因此操作屏幕之前，需要退出休眠
     LCD_WriteCommand(0x11); // 退出休眠 指令
-    HAL_Delay(120); // 需要等待120ms，让电源电压和时钟电路稳定下来
+    HAL_Delay(120);         // 需要等待120ms，让电源电压和时钟电路稳定下来
 
     // 打开显示指令，LCD控制器在刚上电、复位时，会自动关闭显示
     LCD_WriteCommand(0x29); // 打开显示
@@ -230,7 +235,7 @@ void SPI_LCD_Init(void) {
     LCD_Clear();                   // 清屏
 
     LCD_SetAsciiFont(&ASCII_Font24); // 设置默认字体
-    LCD_ShowNumMode(Fill_Zero); // 设置变量显示模式，多余位填充空格还是填充0
+    LCD_ShowNumMode(Fill_Zero);      // 设置变量显示模式，多余位填充空格还是填充0
 
     // 全部设置完毕之后，打开背光
     LCD_Backlight_ON; // 引脚输出高电平点亮背光
@@ -245,7 +250,8 @@ void SPI_LCD_Init(void) {
  *	函数功能:   设置需要显示的坐标区域
  *****************************************************************************************************************************************/
 
-void LCD_SetAddress(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void LCD_SetAddress(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+{
     LCD_CS_L; // 片选拉低，使能IC
 
     LCD_WriteCommand(0x2a); //	列地址设置，即X坐标
@@ -278,16 +284,15 @@ void LCD_SetAddress(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_SetColor(uint32_t Color) {
+void LCD_SetColor(uint32_t Color)
+{
     uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0; // 各个颜色通道的值
 
-    Red_Value =
-        (uint16_t)((Color & 0x00F80000) >> 8); // 转换成 16位 的RGB565颜色
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 8); // 转换成 16位 的RGB565颜色
     Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
     Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
 
-    LCD.Color = (uint16_t)(Red_Value | Green_Value |
-                           Blue_Value); // 将颜色写入全局LCD参数
+    LCD.Color = (uint16_t)(Red_Value | Green_Value | Blue_Value); // 将颜色写入全局LCD参数
 }
 
 /****************************************************************************************************************************************
@@ -304,16 +309,15 @@ void LCD_SetColor(uint32_t Color) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_SetBackColor(uint32_t Color) {
+void LCD_SetBackColor(uint32_t Color)
+{
     uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0; // 各个颜色通道的值
 
-    Red_Value =
-        (uint16_t)((Color & 0x00F80000) >> 8); // 转换成 16位 的RGB565颜色
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 8); // 转换成 16位 的RGB565颜色
     Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
     Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
 
-    LCD.BackColor = (uint16_t)(Red_Value | Green_Value |
-                               Blue_Value); // 将颜色写入全局LCD参数
+    LCD.BackColor = (uint16_t)(Red_Value | Green_Value | Blue_Value); // 将颜色写入全局LCD参数
 }
 
 /****************************************************************************************************************************************
@@ -330,35 +334,42 @@ void LCD_SetBackColor(uint32_t Color) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_SetDirection(uint8_t direction) {
+void LCD_SetDirection(uint8_t direction)
+{
     LCD.Direction = direction; // 写入全局LCD参数
 
     LCD_CS_L; // 片选拉低，使能IC
 
     if (direction == Direction_H) // 横屏显示
     {
-        LCD_WriteCommand(0x36); // 显存访问控制 指令，用于设置访问显存的方式
+        LCD_WriteCommand(0x36);   // 显存访问控制 指令，用于设置访问显存的方式
         LCD_WriteData_8bit(0x70); // 横屏显示
         LCD.X_Offset = 0;         // 设置控制器坐标偏移量
         LCD.Y_Offset = 0;
         LCD.Width = LCD_Height; // 重新赋值长、宽
         LCD.Height = LCD_Width;
-    } else if (direction == Direction_V) {
-        LCD_WriteCommand(0x36); // 显存访问控制 指令，用于设置访问显存的方式
+    }
+    else if (direction == Direction_V)
+    {
+        LCD_WriteCommand(0x36);   // 显存访问控制 指令，用于设置访问显存的方式
         LCD_WriteData_8bit(0x00); // 垂直显示
         LCD.X_Offset = 0;         // 设置控制器坐标偏移量
         LCD.Y_Offset = 0;
         LCD.Width = LCD_Width; // 重新赋值长、宽
         LCD.Height = LCD_Height;
-    } else if (direction == Direction_H_Flip) {
-        LCD_WriteCommand(0x36); // 显存访问控制 指令，用于设置访问显存的方式
+    }
+    else if (direction == Direction_H_Flip)
+    {
+        LCD_WriteCommand(0x36);   // 显存访问控制 指令，用于设置访问显存的方式
         LCD_WriteData_8bit(0xA0); // 横屏显示，并上下翻转，RGB像素格式
         LCD.X_Offset = 0;         // 设置控制器坐标偏移量
         LCD.Y_Offset = 0;
         LCD.Width = LCD_Height; // 重新赋值长、宽
         LCD.Height = LCD_Width;
-    } else if (direction == Direction_V_Flip) {
-        LCD_WriteCommand(0x36); // 显存访问控制 指令，用于设置访问显存的方式
+    }
+    else if (direction == Direction_V_Flip)
+    {
+        LCD_WriteCommand(0x36);   // 显存访问控制 指令，用于设置访问显存的方式
         LCD_WriteData_8bit(0xC0); // 垂直显示 ，并上下翻转，RGB像素格式
         LCD.X_Offset = 0;         // 设置控制器坐标偏移量
         LCD.Y_Offset = 0;
@@ -384,7 +395,10 @@ void LCD_SetDirection(uint8_t direction) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_SetAsciiFont(pFONT *Asciifonts) { LCD_AsciiFonts = Asciifonts; }
+void LCD_SetAsciiFont(pFONT *Asciifonts)
+{
+    LCD_AsciiFonts = Asciifonts;
+}
 
 /****************************************************************************************************************************************
  *	函 数 名:	LCD_Clear
@@ -396,7 +410,8 @@ void LCD_SetAsciiFont(pFONT *Asciifonts) { LCD_AsciiFonts = Asciifonts; }
  *
  *****************************************************************************************************************************************/
 
-void LCD_Clear(void) {
+void LCD_Clear(void)
+{
     uint32_t i;
 
     LCD_SetAddress(0, 0, LCD.Width - 1, LCD.Height - 1); // 设置坐标
@@ -407,7 +422,8 @@ void LCD_Clear(void) {
 
     LCD_CS_L; // 片选拉低，使能IC
 
-    for (i = 0; i < LCD.Width * LCD.Height; i++) {
+    for (i = 0; i < LCD.Width * LCD.Height; i++)
+    {
 
         LCD_SPI.Instance->DR = LCD.BackColor;
         while ((LCD_SPI.Instance->SR & 0x0002) == 0)
@@ -440,7 +456,8 @@ void LCD_Clear(void) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+void LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
     uint16_t i;
 
     LCD_SetAddress(x, y, x + width - 1, y + height - 1); // 设置坐标
@@ -451,7 +468,8 @@ void LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
 
     LCD_CS_L; // 片选拉低，使能IC
 
-    for (i = 0; i < width * height; i++) {
+    for (i = 0; i < width * height; i++)
+    {
 
         LCD_SPI.Instance->DR = LCD.BackColor;
         while ((LCD_SPI.Instance->SR & 0x0002) == 0)
@@ -481,7 +499,8 @@ void LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color) {
+void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color)
+{
     LCD_SetAddress(x, y, x, y); //	设置坐标
 
     LCD_CS_L; // 片选拉低，使能IC
@@ -512,7 +531,8 @@ void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
+void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c)
+{
     uint16_t index = 0, counter = 0, i = 0, w = 0; // 计数变量
     uint8_t disChar;                               // 存储字符的地址
 
@@ -520,23 +540,24 @@ void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
 
     LCD_CS_L; // 片选拉低，使能IC
 
-    for (index = 0; index < LCD_AsciiFonts->Sizes; index++) {
-        disChar =
-            LCD_AsciiFonts
-                ->pTable[c * LCD_AsciiFonts->Sizes + index]; // 获取字符的模值
-        for (counter = 0; counter < 8; counter++) {
-            if (disChar & 0x01) {
+    for (index = 0; index < LCD_AsciiFonts->Sizes; index++)
+    {
+        disChar = LCD_AsciiFonts->pTable[c * LCD_AsciiFonts->Sizes + index]; // 获取字符的模值
+        for (counter = 0; counter < 8; counter++)
+        {
+            if (disChar & 0x01)
+            {
                 LCD_Buff[i] = LCD.Color; // 当前模值不为0时，使用画笔色绘点
-            } else {
+            }
+            else
+            {
                 LCD_Buff[i] = LCD.BackColor; // 否则使用背景色绘制点
             }
             disChar >>= 1;
             i++;
             w++;
-            if (w ==
-                LCD_AsciiFonts
-                    ->Width) // 如果写入的数据达到了字符宽度，则退出当前循环
-            { // 进入下一字符的写入的绘制
+            if (w == LCD_AsciiFonts->Width) // 如果写入的数据达到了字符宽度，则退出当前循环
+            {                               // 进入下一字符的写入的绘制
                 w = 0;
                 break;
             }
@@ -567,9 +588,9 @@ void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DisplayString(uint16_t x, uint16_t y, char *p) {
-    while ((x < LCD.Width) &&
-           (*p != 0)) // 判断显示坐标是否超出显示区域并且字符是否为空字符
+void LCD_DisplayString(uint16_t x, uint16_t y, char *p)
+{
+    while ((x < LCD.Width) && (*p != 0)) // 判断显示坐标是否超出显示区域并且字符是否为空字符
     {
         LCD_DisplayChar(x, y, *p);
         x += LCD_AsciiFonts->Width; // 显示下一个字符
@@ -594,8 +615,10 @@ void LCD_DisplayString(uint16_t x, uint16_t y, char *p) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_SetTextFont(pFONT *fonts) {
-    switch (fonts->Width) {
+void LCD_SetTextFont(pFONT *fonts)
+{
+    switch (fonts->Width)
+    {
     case 12:
         LCD_AsciiFonts = &ASCII_Font12;
         break; // 设置ASCII字符的字体为 1206
@@ -654,14 +677,15 @@ void LCD_SetTextFont(pFONT *fonts) {
  *
  **********************************************************************************************************************************极客ke*******/
 
-void LCD_DisplayText(uint16_t x, uint16_t y, char *pText) {
+void LCD_DisplayText(uint16_t x, uint16_t y, char *pText)
+{
 
     while (*pText != 0)     // 判断是否为空字符
         if (*pText <= 0x7F) // 判断是否为ASCII码
         {
             LCD_DisplayChar(x, y, *pText); // 显示ASCII
-            x += LCD_AsciiFonts->Width; // 水平坐标调到下一个字符处
-            pText++;                    // 字符串地址+1
+            x += LCD_AsciiFonts->Width;    // 水平坐标调到下一个字符处
+            pText++;                       // 字符串地址+1
         }
 }
 
@@ -680,7 +704,10 @@ void LCD_DisplayText(uint16_t x, uint16_t y, char *pText) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_ShowNumMode(uint8_t mode) { LCD.ShowNum_Mode = mode; }
+void LCD_ShowNumMode(uint8_t mode)
+{
+    LCD.ShowNum_Mode = mode;
+}
 
 /*****************************************************************************************************************************************
  *	函 数 名:	LCD_DisplayNumber
@@ -704,14 +731,16 @@ void LCD_ShowNumMode(uint8_t mode) { LCD.ShowNum_Mode = mode; }
  *
  *****************************************************************************************************************************************/
 
-void LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number, uint8_t len) {
+void LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number, uint8_t len)
+{
     char Number_Buffer[15]; // 用于存储转换后的字符串
 
     if (LCD.ShowNum_Mode == Fill_Zero) // 多余位补0
     {
         sprintf(Number_Buffer, "%0.*d", len,
                 number); // 将 number 转换成字符串，便于显示
-    } else               // 多余位补空格
+    }
+    else // 多余位补空格
     {
         sprintf(Number_Buffer, "%*d", len,
                 number); // 将 number 转换成字符串，便于显示
@@ -755,15 +784,16 @@ void LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number, uint8_t len) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DisplayDecimals(uint16_t x, uint16_t y, double decimals, uint8_t len,
-                         uint8_t decs) {
+void LCD_DisplayDecimals(uint16_t x, uint16_t y, double decimals, uint8_t len, uint8_t decs)
+{
     char Number_Buffer[20]; // 用于存储转换后的字符串
 
     if (LCD.ShowNum_Mode == Fill_Zero) // 多余位填充0模式
     {
         sprintf(Number_Buffer, "%0*.*lf", len, decs,
                 decimals); // 将 number 转换成字符串，便于显示
-    } else                 // 多余位填充空格
+    }
+    else // 多余位填充空格
     {
         sprintf(Number_Buffer, "%*.*lf", len, decs,
                 decimals); // 将 number 转换成字符串，便于显示
@@ -790,10 +820,10 @@ void LCD_DisplayDecimals(uint16_t x, uint16_t y, double decimals, uint8_t len,
 
 #define ABS(X) ((X) > 0 ? (X) : -(X))
 
-void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
-    int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
-            yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
-            curpixel = 0;
+void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+{
+    int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0, yinc1 = 0, yinc2 = 0, den = 0, num = 0,
+            numadd = 0, numpixels = 0, curpixel = 0;
 
     deltax = ABS(x2 - x1); /* The difference between the x's */
     deltay = ABS(y2 - y1); /* The difference between the y's */
@@ -804,7 +834,8 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     {
         xinc1 = 1;
         xinc2 = 1;
-    } else /* The x-values are decreasing */
+    }
+    else /* The x-values are decreasing */
     {
         xinc1 = -1;
         xinc2 = -1;
@@ -814,7 +845,8 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     {
         yinc1 = 1;
         yinc2 = 1;
-    } else /* The y-values are decreasing */
+    }
+    else /* The y-values are decreasing */
     {
         yinc1 = -1;
         yinc2 = -1;
@@ -828,7 +860,8 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
         num = deltax / 2;
         numadd = deltay;
         numpixels = deltax; /* There are more x-values than y-values */
-    } else /* There is at least one y-value for every x-value */
+    }
+    else /* There is at least one y-value for every x-value */
     {
         xinc2 = 0; /* Don't change the x for every iteration */
         yinc1 = 0; /* Don't change the y when numerator >= denominator */
@@ -837,10 +870,11 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
         numadd = deltax;
         numpixels = deltay; /* There are more y-values than x-values */
     }
-    for (curpixel = 0; curpixel <= numpixels; curpixel++) {
+    for (curpixel = 0; curpixel <= numpixels; curpixel++)
+    {
         LCD_DrawPoint(x, y, LCD.Color); /* Draw the current pixel */
-        num += numadd;  /* Increase the numerator by the top of the fraction */
-        if (num >= den) /* Check if numerator >= denominator */
+        num += numadd;                  /* Increase the numerator by the top of the fraction */
+        if (num >= den)                 /* Check if numerator >= denominator */
         {
             num -= den; /* Calculate the new numerator value */
             x += xinc1; /* Change the x as appropriate */
@@ -866,10 +900,12 @@ void LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
  *  性能测试：
  *****************************************************************************************************************************************/
 
-void LCD_DrawLine_V(uint16_t x, uint16_t y, uint16_t height) {
+void LCD_DrawLine_V(uint16_t x, uint16_t y, uint16_t height)
+{
     uint16_t i; // 计数变量
 
-    for (i = 0; i < height; i++) {
+    for (i = 0; i < height; i++)
+    {
         LCD_Buff[i] = LCD.Color; // 写入缓冲区
     }
     LCD_SetAddress(x, y, x, y + height - 1); // 设置坐标
@@ -892,10 +928,12 @@ void LCD_DrawLine_V(uint16_t x, uint16_t y, uint16_t height) {
  *快很多 性能测试：
  **********************************************************************************************************************************极客ke*******/
 
-void LCD_DrawLine_H(uint16_t x, uint16_t y, uint16_t width) {
+void LCD_DrawLine_H(uint16_t x, uint16_t y, uint16_t width)
+{
     uint16_t i; // 计数变量
 
-    for (i = 0; i < width; i++) {
+    for (i = 0; i < width; i++)
+    {
         LCD_Buff[i] = LCD.Color; // 写入缓冲区
     }
     LCD_SetAddress(x, y, x + width - 1, y); // 设置坐标
@@ -918,7 +956,8 @@ void LCD_DrawLine_H(uint16_t x, uint16_t y, uint16_t width) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DrawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+void LCD_DrawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
     // 绘制水平线
     LCD_DrawLine_H(x, y, width);
     LCD_DrawLine_H(x, y + height - 1, width);
@@ -942,9 +981,11 @@ void LCD_DrawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r) {
+void LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r)
+{
     int Xadd = -r, Yadd = 0, err = 2 - 2 * r, e2;
-    do {
+    do
+    {
 
         LCD_DrawPoint(x - Xadd, y + Yadd, LCD.Color);
         LCD_DrawPoint(x + Xadd, y + Yadd, LCD.Color);
@@ -952,7 +993,8 @@ void LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r) {
         LCD_DrawPoint(x - Xadd, y - Yadd, LCD.Color);
 
         e2 = err;
-        if (e2 <= Yadd) {
+        if (e2 <= Yadd)
+        {
             err += ++Yadd * 2 + 1;
             if (-Xadd == Yadd && e2 <= Xadd)
                 e2 = 0;
@@ -985,15 +1027,18 @@ void LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r) {
  * @param r1 : Horizontal radius
  * @param r2 : Vertical radius
  */
-void LCD_DrawEllipse(int x, int y, int r1, int r2) {
+void LCD_DrawEllipse(int x, int y, int r1, int r2)
+{
     int Xadd = -r1, Yadd = 0, err = 2 - 2 * r1, e2;
     float K = 0, rad1 = 0, rad2 = 0;
 
     rad1 = r1;
     rad2 = r2;
 
-    if (r1 > r2) {
-        do {
+    if (r1 > r2)
+    {
+        do
+        {
             K = (float)(rad1 / rad2);
 
             LCD_DrawPoint(x - Xadd, y + (uint16_t)(Yadd / K), LCD.Color);
@@ -1002,7 +1047,8 @@ void LCD_DrawEllipse(int x, int y, int r1, int r2) {
             LCD_DrawPoint(x - Xadd, y - (uint16_t)(Yadd / K), LCD.Color);
 
             e2 = err;
-            if (e2 <= Yadd) {
+            if (e2 <= Yadd)
+            {
                 err += ++Yadd * 2 + 1;
                 if (-Xadd == Yadd && e2 <= Xadd)
                     e2 = 0;
@@ -1010,10 +1056,13 @@ void LCD_DrawEllipse(int x, int y, int r1, int r2) {
             if (e2 > Xadd)
                 err += ++Xadd * 2 + 1;
         } while (Xadd <= 0);
-    } else {
+    }
+    else
+    {
         Yadd = -r2;
         Xadd = 0;
-        do {
+        do
+        {
             K = (float)(rad2 / rad1);
 
             LCD_DrawPoint(x - (uint16_t)(Xadd / K), y + Yadd, LCD.Color);
@@ -1022,7 +1071,8 @@ void LCD_DrawEllipse(int x, int y, int r1, int r2) {
             LCD_DrawPoint(x - (uint16_t)(Xadd / K), y - Yadd, LCD.Color);
 
             e2 = err;
-            if (e2 <= Xadd) {
+            if (e2 <= Xadd)
+            {
                 err += ++Xadd * 3 + 1;
                 if (-Yadd == Xadd && e2 <= Yadd)
                     e2 = 0;
@@ -1047,7 +1097,8 @@ void LCD_DrawEllipse(int x, int y, int r1, int r2) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r) {
+void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r)
+{
     int32_t D;     /* Decision Variable */
     uint32_t CurX; /* Current X Value */
     uint32_t CurY; /* Current Y Value */
@@ -1057,22 +1108,28 @@ void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r) {
     CurX = 0;
     CurY = r;
 
-    while (CurX <= CurY) {
-        if (CurY > 0) {
+    while (CurX <= CurY)
+    {
+        if (CurY > 0)
+        {
             LCD_DrawLine_V(x - CurX, y - CurY, 2 * CurY);
             LCD_DrawLine_V(x + CurX, y - CurY, 2 * CurY);
         }
 
-        if (CurX > 0) {
+        if (CurX > 0)
+        {
             // LCD_DrawLine(x - CurY, y - CurX,x - CurY,y - CurX + 2*CurX);
             // LCD_DrawLine(x + CurY, y - CurX,x + CurY,y - CurX + 2*CurX);
 
             LCD_DrawLine_V(x - CurY, y - CurX, 2 * CurX);
             LCD_DrawLine_V(x + CurY, y - CurX, 2 * CurX);
         }
-        if (D < 0) {
+        if (D < 0)
+        {
             D += (CurX << 2) + 6;
-        } else {
+        }
+        else
+        {
             D += ((CurX - CurY) << 2) + 10;
             CurY--;
         }
@@ -1095,7 +1152,8 @@ void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
     uint16_t i;
 
     LCD_SetAddress(x, y, x + width - 1, y + height - 1); // 设置坐标
@@ -1106,7 +1164,8 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
 
     LCD_CS_L; // 片选拉低，使能IC
 
-    for (i = 0; i < width * height; i++) {
+    for (i = 0; i < width * height; i++)
+    {
 
         LCD_SPI.Instance->DR = LCD.Color;
         while ((LCD_SPI.Instance->SR & 0x0002) == 0)
@@ -1138,8 +1197,8 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
  *
  *****************************************************************************************************************************************/
 
-void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
-                   const uint8_t *pImage) {
+void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pImage)
+{
     uint8_t disChar;              // 字模的值
     uint16_t Xaddress = x;        // 水平坐标
     uint16_t Yaddress = y;        // 垂直坐标
@@ -1148,26 +1207,28 @@ void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
     uint16_t Buff_Height = 0;     // 缓冲区的行数
 
     // 因为缓冲区大小有限，需要分多次写入
-    Buff_Height =
-        (sizeof(LCD_Buff) / 2) / height; // 计算缓冲区能够写入图片的多少行
+    Buff_Height = (sizeof(LCD_Buff) / 2) / height; // 计算缓冲区能够写入图片的多少行
 
     for (i = 0; i < height; i++) // 循环按行写入
     {
-        for (j = 0; j < (float)width / 8; j++) {
+        for (j = 0; j < (float)width / 8; j++)
+        {
             disChar = *pImage;
 
-            for (m = 0; m < 8; m++) {
-                if (disChar & 0x01) {
-                    LCD_Buff[BuffCount] =
-                        LCD.Color; // 当前模值不为0时，使用画笔色绘点
-                } else {
+            for (m = 0; m < 8; m++)
+            {
+                if (disChar & 0x01)
+                {
+                    LCD_Buff[BuffCount] = LCD.Color; // 当前模值不为0时，使用画笔色绘点
+                }
+                else
+                {
                     LCD_Buff[BuffCount] = LCD.BackColor; // 否则使用背景色绘制点
                 }
                 disChar >>= 1; // 模值移位
                 Xaddress++;    // 水平坐标自加
                 BuffCount++;   // 缓冲区计数
-                if ((Xaddress - x) ==
-                    width) // 如果水平坐标达到了字符宽度，则退出当前循环,进入下一行的绘制
+                if ((Xaddress - x) == width) // 如果水平坐标达到了字符宽度，则退出当前循环,进入下一行的绘制
                 {
                     Xaddress = x;
                     break;
@@ -1183,12 +1244,11 @@ void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
                            Yaddress + Buff_Height - 1);   // 设置坐标
             LCD_WriteBuff(LCD_Buff, width * Buff_Height); // 写入显存
 
-            Yaddress =
-                Yaddress + Buff_Height; // 计算行偏移，开始写入下一部分数据
+            Yaddress = Yaddress + Buff_Height; // 计算行偏移，开始写入下一部分数据
         }
         if ((i + 1) == height) // 到了最后一行时
         {
-            LCD_SetAddress(x, Yaddress, x + width - 1, i + y); // 设置坐标
+            LCD_SetAddress(x, Yaddress, x + width - 1, i + y);       // 设置坐标
             LCD_WriteBuff(LCD_Buff, width * (i + 1 + y - Yaddress)); // 写入显存
         }
     }
@@ -1201,7 +1261,8 @@ void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
  * @brief System UI initialization.
  *
  */
-void LCD_UI_Init() {
+void LCD_UI_Init()
+{
     LCD_SetBackColor(LCD_WHITE);
     LCD_SetColor(LCD_BLACK);
     LCD_SetAsciiFont(&ASCII_Font24);
