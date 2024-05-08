@@ -242,13 +242,13 @@ void pwr_monitor_tsk(void *argument)
         }
         // Calculate power data
         sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT;
-        sys_pwr.mmc.current = (2.5 - (adc_value_buff[1] / ADC_COEFFICIENT)) / 0.1;
-        sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
-        sys_pwr.bkup.voltage = adc_value_buff[2] / ADC_COEFFICIENT;
+        sys_pwr.bkup.voltage = adc_value_buff[1] / ADC_COEFFICIENT;
+        sys_pwr.out.voltage = adc_value_buff[2] / ADC_COEFFICIENT;
+        sys_pwr.mmc.current = (2.5 - (adc_value_buff[3] / ADC_COEFFICIENT)) / 0.1;
         sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
-        sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
-        sys_pwr.out.voltage = adc_value_buff[4] / ADC_COEFFICIENT;
         sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
+        sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
+        sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
         sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
 
         // Display ADC Data to LCD
