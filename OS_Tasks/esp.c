@@ -16,8 +16,8 @@
 #include "lcd.h"
 
 // string
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 // FreeRTOS
 #include "cmsis_os.h"
@@ -121,7 +121,7 @@ void esp_init_os(void)
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
             LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE=1 OK");
+            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE Set");
             osMutexRelease(lcd_mutexHandle);
         }
         else
@@ -178,14 +178,13 @@ void esp_init_os(void)
         osMutexRelease(lcd_mutexHandle);
         return;
     }
-
-    osDelay(3000);
+    osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, osWaitForever); // WIFI GOT IP \r\n OK
 
     // MQTT configuration
-    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", MQTT_CLIENT_ID, MQTT_CLIENT_ID,
-            MQTT_CLIENT_ID);
+    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", MQTT_CLIENT_ID, MQTT_USER, MQTT_PWD);
+    HAL_UART_Transmit_DMA(&huart1, cmd, strlen(cmd));
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) == osOK)
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
     {
         if (strstr((char *)esp_response_buff, "OK") != NULL)
         {
@@ -214,9 +213,8 @@ void esp_init_os(void)
         osMutexRelease(lcd_mutexHandle);
         return;
     }
-    osDelay(1000);
 
-    sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d\r\n", MQTT_BROKER, MQTT_PORT);
+    sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d,1\r\n", MQTT_BROKER, MQTT_PORT); // enable auto reconnect
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 3000) == osOK)
     {
@@ -226,6 +224,7 @@ void esp_init_os(void)
             LCD_SetAsciiFont(&ASCII_Font16);
             LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
             LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
+                      LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
         }
@@ -248,7 +247,6 @@ void esp_init_os(void)
         osMutexRelease(lcd_mutexHandle);
         return;
     }
-    osDelay(1000);
 
     sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", MQTT_TOPIC_USR_CMD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
@@ -327,19 +325,19 @@ void tmr_report_pwr_clbk(void *argument)
 
     // Send data to ESP8266
     sys_pwr_report.mmc.voltage = voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT);
-    sys_pwr_report.mmc.current = voltage_current_format((2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.mmc.power =
-        power_format(adc_to_send[0] / ADC_COEFFICIENT * (2.5 - (adc_to_send[1] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.bkup.voltage = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT);
-    sys_pwr_report.bkup.current = voltage_current_format((2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.bkup.power =
-        power_format(adc_to_send[2] / ADC_COEFFICIENT * (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
-    sys_pwr_report.out.voltage = voltage_current_format(adc_to_send[4] / ADC_COEFFICIENT);
+    sys_pwr_report.bkup.voltage = voltage_current_format(adc_to_send[1] / ADC_COEFFICIENT);
+    sys_pwr_report.out.voltage = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT);
+    sys_pwr_report.mmc.current = voltage_current_format((2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.bkup.current = voltage_current_format((2.5 - (adc_to_send[4] / ADC_COEFFICIENT)) / 0.1);
     sys_pwr_report.out.current = voltage_current_format((2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.mmc.power =
+        power_format(adc_to_send[0] / ADC_COEFFICIENT * (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
+    sys_pwr_report.bkup.power =
+        power_format(adc_to_send[1] / ADC_COEFFICIENT * (2.5 - (adc_to_send[4] / ADC_COEFFICIENT)) / 0.1);
     sys_pwr_report.out.power =
-        power_format(adc_to_send[4] / ADC_COEFFICIENT * (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
+        power_format(adc_to_send[2] / ADC_COEFFICIENT * (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
 
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%4d%4d%4d%4d%4d%4d%4d%4d%4d,2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS,
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0%4d%4d%4d%4d%4d%4d%4d%4d%4d\",2,0\r\n", (char *)MQTT_TOPIC_STATUS,
             sys_pwr_report.mmc.voltage, sys_pwr_report.bkup.voltage, sys_pwr_report.out.voltage,
             sys_pwr_report.mmc.current, sys_pwr_report.bkup.current, sys_pwr_report.out.current,
             sys_pwr_report.mmc.power, sys_pwr_report.bkup.power, sys_pwr_report.out.power);

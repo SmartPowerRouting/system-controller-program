@@ -257,12 +257,12 @@ void pwr_monitor_tsk(void *argument)
             // if (0) {
             //  Display ADC Data
             LCD_SetAsciiFont(&ASCII_Font20);
-            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, sys_pwr.mmc.voltage, 3, 2);
-            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, sys_pwr.mmc.current, 3, 2);
+            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, sys_pwr.mmc.voltage, 5, 2);
+            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, sys_pwr.mmc.current, 5, 2);
             LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, sys_pwr.mmc.power, 5, 2);
-            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, sys_pwr.bkup.voltage, 3, 2);
-            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, sys_pwr.bkup.current, 3, 2);
-            LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, sys_pwr.bkup.power, 3, 2);
+            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, sys_pwr.bkup.voltage, 5, 2);
+            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, sys_pwr.bkup.current, 5, 2);
+            LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, sys_pwr.bkup.power, 5, 2);
             LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_OUT_Y, sys_pwr.out.voltage, 5, 2);
             LCD_DisplayDecimals(LCD_CURRENT_X, LCD_OUT_Y, sys_pwr.out.current, 5, 2);
             LCD_DisplayDecimals(LCD_POWER_X, LCD_OUT_Y, sys_pwr.out.power, 5, 2);

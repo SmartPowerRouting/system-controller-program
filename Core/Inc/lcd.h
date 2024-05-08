@@ -152,9 +152,9 @@ void LCD_UI_Init();
 
 #define LCD_WIFI_STAT_X 65
 #define LCD_WIFI_STAT_Y 0
-#define LCD_MQTT_BRKR_X 113
+#define LCD_MQTT_BRKR_X 121
 #define LCD_MQTT_BRKR_Y 16
-#define LCD_MQTT_CLNT_X 153
+#define LCD_MQTT_CLNT_X 145
 #define LCD_MQTT_CLNT_Y 32
 
 #define LCD_VOTAGE_X 6
