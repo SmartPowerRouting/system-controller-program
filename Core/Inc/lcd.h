@@ -152,4 +152,11 @@ void LCD_UI_Init();
 #define LCD_Backlight_ON HAL_GPIO_WritePin(LCD_Backlight_PORT, LCD_Backlight_PIN, GPIO_PIN_SET)
 #define LCD_Backlight_OFF HAL_GPIO_WritePin(LCD_Backlight_PORT, LCD_Backlight_PIN, GPIO_PIN_RESET)
 
+#define LCD_WIFI_STAT_X 113
+#define LCD_WIFI_STAT_Y 0
+#define LCD_MQTT_BRKR_X 97
+#define LCD_MQTT_BRKR_Y 16
+#define LCD_MQTT_CLNT_X 105
+#define LCD_MQTT_CLNT_Y 32
+
 #endif // __LCD_H

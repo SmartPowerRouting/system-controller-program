@@ -121,6 +121,8 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   LCD_DisplayString(100, 100, "Hard fault");
+  int dummy = uxTaskGetStackHighWaterMark(NULL);
+	LCD_DisplayNumber(100, 200, dummy, 8);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

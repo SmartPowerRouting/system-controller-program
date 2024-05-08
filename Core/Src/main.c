@@ -128,7 +128,7 @@ int main(void)
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
   // Network initialization
-  esp_init();
+  // esp_init();
 
   // Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller
@@ -136,7 +136,7 @@ int main(void)
 
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
-	
+	HAL_Delay(1000);
   /* USER CODE END 2 */
 
   /* Init scheduler */

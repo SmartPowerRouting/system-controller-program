@@ -38,7 +38,10 @@ typedef struct
 
 // Function prototypes
 void esp_init(void);
+void esp_init_os(void);
 void esp_msg_tsk(void *argument);
 void tmr_report_pwr_clbk(void *argument);
+uint16_t voltage_current_format(float f);
+uint16_t power_format(float f);
 
 #endif // __ESP_H
