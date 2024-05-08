@@ -1273,18 +1273,18 @@ void LCD_UI_Init()
     LCD_DisplayString(42, 236, "SYSTEM OUTPUT");
 
     LCD_SetAsciiFont(&ASCII_Font20);
-    LCD_DisplayChar(60, 112, 'V');
-    LCD_DisplayChar(60, 184, 'V');
-    LCD_DisplayChar(60, 256, 'V');
-    LCD_DisplayChar(140, 112, 'A');
-    LCD_DisplayChar(140, 184, 'A');
-    LCD_DisplayChar(140, 256, 'A');
-    LCD_DisplayChar(220, 112, 'W');
-    LCD_DisplayChar(220, 184, 'W');
-    LCD_DisplayChar(220, 256, 'W');
+    LCD_DisplayChar(60, LCD_MMC_Y, 'V');
+    LCD_DisplayChar(60, LCD_BKUP_Y, 'V');
+    LCD_DisplayChar(60, LCD_OUT_Y, 'V');
+    LCD_DisplayChar(140, LCD_MMC_Y, 'A');
+    LCD_DisplayChar(140, LCD_BKUP_Y, 'A');
+    LCD_DisplayChar(140, LCD_OUT_Y, 'A');
+    LCD_DisplayChar(220, LCD_MMC_Y, 'W');
+    LCD_DisplayChar(220, LCD_BKUP_Y, 'W');
+    LCD_DisplayChar(220, LCD_OUT_Y, 'W');
 
     LCD_SetAsciiFont(&ASCII_Font16);
-    LCD_DisplayString(16, 0, "WIFI: ");
-    LCD_DisplayString(16, 16, "MQTT BROKER: ");
-    LCD_DisplayString(16, 32, "MQTT CLIENT ID: ");
+    LCD_DisplayString(16, LCD_WIFI_STAT_Y, "WIFI: ");
+    LCD_DisplayString(16, LCD_MQTT_BRKR_Y, "MQTT BROKER: ");
+    LCD_DisplayString(16, LCD_MQTT_CLNT_Y, "MQTT CLIENT ID: ");
 }

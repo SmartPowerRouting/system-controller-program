@@ -37,7 +37,6 @@ typedef struct
 } usrCmd_t;
 
 // Function prototypes
-void esp_init(void);
 void esp_init_os(void);
 void esp_msg_tsk(void *argument);
 void tmr_report_pwr_clbk(void *argument);

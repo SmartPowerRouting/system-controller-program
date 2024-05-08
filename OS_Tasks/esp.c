@@ -15,6 +15,10 @@
 #include "adc.h"
 #include "lcd.h"
 
+// string
+#include <string.h>
+#include <stdlib.h>
+
 // FreeRTOS
 #include "cmsis_os.h"
 #include "os_events.h"
@@ -69,93 +73,31 @@ sysPwrData_t sys_pwr_report = {0};
 usrCmd_t usr_cmd = {0};
 
 /**
- * @brief ESP-12F initialization
- *
- */
-void esp_init(void)
-{
-    LCD_DisplayString(0, 20, "ESP8266 initializing...");
-    uint8_t cmd[255] = {0};        // Command buffer
-    memset(uart2_rx_data, 0, 255); // Clear UART2 buffer
-    // randomly send something to avoid the first response from ESP8266
-    sprintf(cmd, "AT\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-
-    HAL_Delay(1000);
-
-    // Perform reset
-    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
-
-    sprintf(cmd, "AT+RESTORE\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-
-    HAL_Delay(2000);
-    LCD_DisplayString(0, 40, "ESP8266 restore success");
-
-    // turn off echo
-    sprintf(cmd, "ATE0\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(1000);
-
-    // Set station mode
-    sprintf(cmd, "AT+CWMODE=1\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(1000);
-
-    // Connect to WiFi
-    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
-    HAL_Delay(8000);
-
-    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"2222\",\"2222\",\"2222\",0,0,\"\"\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(1000);
-
-    sprintf(cmd, "AT+MQTTCONN=0,\"118.31.68.218\",1883,0\r\n");
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
-    HAL_Delay(3000);
-
-    sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", (uint8_t *)MQTT_TOPIC_USR_CMD);
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(1000);
-
-    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"hello world\",2,0\r\n", (uint8_t *)MQTT_TOPIC_STATUS);
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    HAL_Delay(1000);
-}
-
-/**
  * @brief ESP-12F initialization (in OS)
  *
  */
 void esp_init_os(void)
 {
-    osDelay(1000);
+    uint8_t cmd[255] = {0};
     uint8_t esp_response_buff[255] = {0}; // ESP response buffer (privately
                                           // used in this function)
     // Perform reset
+    osDelay(1000);
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
     osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT | MQTT_CONN_STAT);
 
     // Set UI
     osMutexAcquire(lcd_mutexHandle, osWaitForever);
+    LCD_SetAsciiFont(&ASCII_Font16);
+    LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
     LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Initializing...");
     osMutexRelease(lcd_mutexHandle);
-    uint8_t cmd[255] = {0}; // Command buffer
-    int dummy = uxTaskGetStackHighWaterMark(NULL);
-    osMutexAcquire(lcd_mutexHandle, osWaitForever);
-    LCD_DisplayNumber(0, 0, dummy, 6);
-    osMutexRelease(lcd_mutexHandle);
+
     // randomly send something to avoid the first response from ESP8266
     sprintf(cmd, "AT\r\n");
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     osDelay(1000);
-
-    // osThreadSuspend(esp_msg_tskHandle); // take over esp message analysis task
 
     // restore factory settings
     sprintf(cmd, "AT+RESTORE\r\n");
@@ -177,13 +119,17 @@ void esp_init_os(void)
         if (strstr((char *)esp_response_buff, "OK") != NULL)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE=1 OK");
             osMutexRelease(lcd_mutexHandle);
         }
         else
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Set CWMODE Error");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
+            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -191,7 +137,9 @@ void esp_init_os(void)
     else
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Set CWMODE Timeout");
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
+        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -204,6 +152,8 @@ void esp_init_os(void)
         if (strstr((char *)esp_response_buff, "WIFI CONNECTED") != NULL)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, WIFI_SSID);
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
@@ -212,6 +162,8 @@ void esp_init_os(void)
         else
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Error");
             osMutexRelease(lcd_mutexHandle);
             return;
@@ -220,6 +172,8 @@ void esp_init_os(void)
     else
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
@@ -236,13 +190,17 @@ void esp_init_os(void)
         if (strstr((char *)esp_response_buff, "OK") != NULL)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Success");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Success");
             osMutexRelease(lcd_mutexHandle);
         }
         else
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Error");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -250,7 +208,9 @@ void esp_init_os(void)
     else
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Config Timeout");
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -263,14 +223,18 @@ void esp_init_os(void)
         if (strstr((char *)esp_response_buff, "OK") != NULL)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_X, "MQTT Connected");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
         }
         else
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "MQTT Error");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -278,7 +242,9 @@ void esp_init_os(void)
     else
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "MQTT Timeout");
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -291,7 +257,9 @@ void esp_init_os(void)
         if (strstr((char *)esp_response_buff, "OK") == NULL)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Error");
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
+            LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Error");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -299,7 +267,9 @@ void esp_init_os(void)
     else
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Subscribe Timeout");
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
+        LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
