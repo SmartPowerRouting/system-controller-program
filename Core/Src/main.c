@@ -136,7 +136,6 @@ int main(void)
 
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
-	HAL_Delay(1000);
   /* USER CODE END 2 */
 
   /* Init scheduler */

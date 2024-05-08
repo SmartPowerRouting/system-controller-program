@@ -285,11 +285,11 @@ void pwr_monitor_tsk(void *argument)
             // display info on LCD
             if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
             {
-                // use red pen and white background
                 LCD_SetColor(LCD_RED);
                 LCD_SetBackColor(LCD_WHITE);
                 LCD_SetTextFont(&ASCII_Font20);
-                LCD_DisplayString(0, 200, "Power Overload");
+                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+                LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
                 osMutexRelease(lcd_mutexHandle);
             }
         }
@@ -352,7 +352,7 @@ void led_blink_tsk(void *argument)
             osThreadResume(dcdc_ctrlHandle);
             // TODO: Check if the power should be resumed??
         }
-        osDelay(500);
+        osDelay(200);
     }
     /* USER CODE END led_blink_tsk */
 }
