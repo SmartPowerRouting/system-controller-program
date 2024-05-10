@@ -35,10 +35,13 @@ typedef struct
                     // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
 } usrCmd_t;
 
-// Function prototypes
-void esp_init_os(void);
+// OS task function prototypes
 void esp_msg_tsk(void *argument);
 void tmr_report_pwr_clbk(void *argument);
+void mqtt_msg_tsk(void *argument);
+
+// Helper function prototypes
+void esp_init_os(void);
 uint16_t voltage_current_format(float f);
 uint16_t power_format(float f);
 

@@ -5,8 +5,8 @@
  * @version 1.0
  * @date 2024-05-10
  *
- * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024
- * Project 19.
+ * @copyright Copyright (c) 2024 Tiantian Zhong @ Zhejiang University
+ *            This file is part of ZJUI ECE 445 Spring 2024 Project 19.
  *
  */
 
@@ -28,7 +28,7 @@
 // Network info
 #include "srv_info_private.h"
 
-uint8_t esp_response[255] = {0};
+uint8_t esp_response[256] = {0};
 
 // mqtt client info
 #define MQTT_CLIENT_ID "WindPwr"
@@ -47,10 +47,10 @@ uint8_t esp_response[255] = {0};
 // mqtt lwt msg
 #define MQTT_LWT_MSG "-1"
 
-extern uint8_t uart2_rx_data[255]; // UART2 DMA buffer
+extern uint8_t uart2_rx_data[256]; // UART2 DMA buffer
 extern uint8_t uart2_rx_flag;      // Flag to indicate that UART2 DMA has received data
-uint8_t mqtt_recv_topic[255];      // MQTT received topic
-uint8_t mqtt_recv_msg[255];        // MQTT received message
+uint8_t mqtt_recv_topic[256];      // MQTT received topic
+uint8_t mqtt_recv_msg[256];        // MQTT received message
 
 extern uint32_t adc1_data[6]; // ADC data
 
@@ -59,6 +59,7 @@ extern osMessageQueueId_t esp_rx_queueHandle;     // ESP message queue
 extern osMessageQueueId_t esp_tx_queueHandle;     // MQTT message queue
 extern osMessageQueueId_t usr_cmd_queueHandle;    // User command queue
 extern osMessageQueueId_t report_pwr_queueHandle; // Power report queue
+extern osMessageQueueId_t mqtt_rx_msg_queueHandle; // MQTT received message queue
 
 // Tasks
 extern osThreadId_t esp_msg_tskHandle; // ESP message task
@@ -79,8 +80,8 @@ extern osSemaphoreId_t report_pwr_semphrHandle;
  */
 void esp_init_os(void)
 {
-    uint8_t cmd[255] = {0};
-    uint8_t esp_response_buff[255] = {0}; // ESP response buffer (privately
+    uint8_t cmd[256] = {0};
+    uint8_t esp_response_buff[256] = {0}; // ESP response buffer (privately
                                           // used in this function)
     // Perform reset
     osDelay(1000);
@@ -363,7 +364,7 @@ void esp_msg_tsk(void *argument)
     for (;;)
     {
         osDelay(50);
-        uint8_t buff[255] = {0};
+        uint8_t buff[256] = {0};
         uint8_t dummy; // dummy variable to store the message length
         // Send Message
         if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
@@ -377,7 +378,7 @@ void esp_msg_tsk(void *argument)
         {
             // Case a: WIFI Disconnected
             // In this case, set system event flag
-            if (strstr((char *)buff, "WIFI DISCONNECT")!= NULL)
+            if (strstr((char *)buff, "WIFI DISCONNECT") != NULL)
             {
                 osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT);
                 HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
@@ -393,7 +394,7 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case b: MQTT Disconnected
-            if (strstr((char *)buff, "MQTTDISCONNECTED")!= NULL)
+            if (strstr((char *)buff, "MQTTDISCONNECTED") != NULL)
             {
                 osEventFlagsClear(sys_statHandle, MQTT_CONN_STAT);
                 HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
@@ -409,7 +410,7 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case c: WIFI reconnected
-            if (strstr((char *)buff, "WIFI GOT IP")!= NULL)
+            if (strstr((char *)buff, "WIFI GOT IP") != NULL)
             {
                 osEventFlagsSet(sys_statHandle, WIFI_CONN_STAT);
                 HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
@@ -425,7 +426,7 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case d: MQTT reconnected
-            if (strstr((char *)buff, "MQTTCONNECTED")!= NULL)
+            if (strstr((char *)buff, "MQTTCONNECTED") != NULL)
             {
                 osEventFlagsSet(sys_statHandle, MQTT_CONN_STAT);
                 HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
@@ -455,7 +456,7 @@ void tmr_report_pwr_clbk(void *argument)
     // For adc data calculating
     uint16_t vmmc, vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout;
     uint32_t adc_to_send[6];
-    uint8_t buff[255] = {0};
+    uint8_t buff[256] = {0};
     uint32_t sys_event = 0;
     uint8_t pwr_src = 0; // 0: off, 1: MMC, 2: backup
     sysPwrData_t pwrData_buff;
@@ -521,6 +522,20 @@ void tmr_report_pwr_clbk(void *argument)
             vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout, pwr_src);
 
     osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
+}
+
+
+/**
+ * @brief Extract user response from MQTT message.
+ * 
+ * @param argument 
+ */
+void mqtt_msg_tsk(void *argument)
+{
+    for(;;)
+    {
+        osDelay(50);
+    }
 }
 
 /**

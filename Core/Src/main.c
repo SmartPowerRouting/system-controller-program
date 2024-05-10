@@ -1,19 +1,13 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
+ * @file main.c
+ * @author Tiantian Zhong (giant@zju.edu.cn)
+ * @brief The main program.
+ * @date 2024-05-11
+ * 
+ * @copyright Copyright (c) 2024 Tiantian Zhong @ Zhejiang University
+ *            This file is part of ZJUI ECE 445 Spring 2024 Project 19.
+ * 
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -122,18 +116,13 @@ int main(void)
   HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
 
+  // Start UART
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
 	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
-  // Network initialization
-  // esp_init();
-
-  // Start PWM generator
-	// NOTE: PWM generator should not be started until it connects the wireless controller
-	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-
+  // Start ADC
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
   /* USER CODE END 2 */

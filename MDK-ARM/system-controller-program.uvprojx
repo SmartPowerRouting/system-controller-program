@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;../OS_Tasks</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -398,6 +398,16 @@
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\printf.c</FilePath>
+            </File>
+            <File>
+              <FileName>esp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\esp.c</FilePath>
+            </File>
+            <File>
+              <FileName>eb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\eb.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -559,21 +569,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Application/User/OS_Tasks</GroupName>
-          <Files>
-            <File>
-              <FileName>dcdc_pid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\OS_Tasks\dcdc_pid.c</FilePath>
-            </File>
-            <File>
-              <FileName>esp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\OS_Tasks\esp.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>Application/User/LCD</GroupName>
           <Files>
             <File>
@@ -585,16 +580,6 @@
               <FileName>lcd_fonts.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\lcd_fonts.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Application/User/EB</GroupName>
-          <Files>
-            <File>
-              <FileName>eb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\eb.c</FilePath>
             </File>
           </Files>
         </Group>
