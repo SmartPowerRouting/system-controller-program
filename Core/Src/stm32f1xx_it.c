@@ -309,7 +309,6 @@ void USART1_IRQHandler(void)
     uart1_rx_data_len = tmp_len;
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
-    uint8_t buff[255] = {0};
     printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
     // Allow users to transmit AT instructions to ESP8266 through UART1
     osMessageQueuePut(esp_tx_queueHandle, uart1_rx_data, 0, 0);

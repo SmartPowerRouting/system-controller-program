@@ -26,7 +26,6 @@
 #include "lcd.h"
 #include "os_events.h"
 #include "queue.h"
-#include "tim.h"
 #include "usart.h"
 #include <string.h>
 
@@ -286,7 +285,6 @@ void pwr_monitor_tsk(void *argument)
             LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
-            HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
         }
 
         // get ADC data 10 times
@@ -427,7 +425,6 @@ void led_blink_tsk(void *argument)
 {
   /* USER CODE BEGIN led_blink_tsk */
     /* Infinite loop */
-    uint8_t eb_handled = 0;
     HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
     for (;;)
     {
