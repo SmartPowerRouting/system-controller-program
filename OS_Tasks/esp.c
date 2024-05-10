@@ -326,9 +326,9 @@ void tmr_report_pwr_clbk(void *argument)
     }
 
     // Send data to ESP8266
-    vmmc = voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT);
-    vbackup = voltage_current_format(adc_to_send[1] / ADC_COEFFICIENT);
-    vout = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT);
+    vmmc = voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE);
+    vbackup = voltage_current_format(adc_to_send[1] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_BKUP);
+    vout = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE);
     immc = voltage_current_format((2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
     ibackup = voltage_current_format((2.5 - (adc_to_send[4] / ADC_COEFFICIENT)) / 0.1);
     iout = voltage_current_format((2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);

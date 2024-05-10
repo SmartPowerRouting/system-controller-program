@@ -132,7 +132,7 @@ int main(void)
 
   // Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);

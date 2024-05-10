@@ -36,6 +36,8 @@ extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
 #define ADC_COEFFICIENT 1317.00
+#define ADC_COEFFICIENT_VOLTAGE_BKUP 10.
+#define ADC_COEFFICIENT_VOLTAGE 16.
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
