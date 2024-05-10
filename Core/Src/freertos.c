@@ -19,9 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
 #include "cmsis_os.h"
+#include "main.h"
+#include "task.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -31,6 +31,7 @@
 #include "esp.h"
 #include "lcd.h"
 #include "os_events.h"
+#include "queue.h"
 #include "tim.h"
 #include "usart.h"
 #include <string.h>
@@ -44,7 +45,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define OVERLOAD_LIMIT 2000 // in W
+#define OVERLOAD_LIMIT 3.            // in A
+#define UNDERLOAD_VOLTAGE_LIMIT 2.5 // in V
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,71 +68,61 @@ sysPwrData_t sys_pwr = {0};
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
 const osThreadAttr_t pwr_monitor_attributes = {
-  .name = "pwr_monitor",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "pwr_monitor",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_msg */
 osThreadId_t esp_msgHandle;
 const osThreadAttr_t esp_msg_attributes = {
-  .name = "esp_msg",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "esp_msg",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for dcdc_ctrl */
 osThreadId_t dcdc_ctrlHandle;
 const osThreadAttr_t dcdc_ctrl_attributes = {
-  .name = "dcdc_ctrl",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "dcdc_ctrl",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for led_blink */
 osThreadId_t led_blinkHandle;
 const osThreadAttr_t led_blink_attributes = {
-  .name = "led_blink",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "led_blink",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_rx_queue */
 osMessageQueueId_t esp_rx_queueHandle;
-const osMessageQueueAttr_t esp_rx_queue_attributes = {
-  .name = "esp_rx_queue"
-};
+const osMessageQueueAttr_t esp_rx_queue_attributes = {.name = "esp_rx_queue"};
 /* Definitions for esp_tx_queue */
 osMessageQueueId_t esp_tx_queueHandle;
-const osMessageQueueAttr_t esp_tx_queue_attributes = {
-  .name = "esp_tx_queue"
-};
+const osMessageQueueAttr_t esp_tx_queue_attributes = {.name = "esp_tx_queue"};
 /* Definitions for usr_cmd_queue */
 osMessageQueueId_t usr_cmd_queueHandle;
-const osMessageQueueAttr_t usr_cmd_queue_attributes = {
-  .name = "usr_cmd_queue"
-};
+const osMessageQueueAttr_t usr_cmd_queue_attributes = {.name = "usr_cmd_queue"};
 /* Definitions for dcdc_param_queue */
 osMessageQueueId_t dcdc_param_queueHandle;
-const osMessageQueueAttr_t dcdc_param_queue_attributes = {
-  .name = "dcdc_param_queue"
-};
+const osMessageQueueAttr_t dcdc_param_queue_attributes = {.name = "dcdc_param_queue"};
+/* Definitions for report_pwr_queue */
+osMessageQueueId_t report_pwr_queueHandle;
+const osMessageQueueAttr_t report_pwr_queue_attributes = {.name = "report_pwr_queue"};
 /* Definitions for tmr_report_pwr */
 osTimerId_t tmr_report_pwrHandle;
-const osTimerAttr_t tmr_report_pwr_attributes = {
-  .name = "tmr_report_pwr"
-};
+const osTimerAttr_t tmr_report_pwr_attributes = {.name = "tmr_report_pwr"};
 /* Definitions for adc_mutex */
 osMutexId_t adc_mutexHandle;
-const osMutexAttr_t adc_mutex_attributes = {
-  .name = "adc_mutex"
-};
+const osMutexAttr_t adc_mutex_attributes = {.name = "adc_mutex"};
 /* Definitions for lcd_mutex */
 osMutexId_t lcd_mutexHandle;
-const osMutexAttr_t lcd_mutex_attributes = {
-  .name = "lcd_mutex"
-};
+const osMutexAttr_t lcd_mutex_attributes = {.name = "lcd_mutex"};
+/* Definitions for report_pwr_semphr */
+osSemaphoreId_t report_pwr_semphrHandle;
+const osSemaphoreAttr_t report_pwr_semphr_attributes = {.name = "report_pwr_semphr"};
 /* Definitions for sys_stat */
 osEventFlagsId_t sys_statHandle;
-const osEventFlagsAttr_t sys_stat_attributes = {
-  .name = "sys_stat"
-};
+const osEventFlagsAttr_t sys_stat_attributes = {.name = "sys_stat"};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -146,78 +138,85 @@ extern void tmr_report_pwr_clbk(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
     os_running = 1;
-  /* USER CODE END Init */
-  /* Create the mutex(es) */
-  /* creation of adc_mutex */
-  adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
+    /* USER CODE END Init */
+    /* Create the mutex(es) */
+    /* creation of adc_mutex */
+    adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
 
-  /* creation of lcd_mutex */
-  lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
+    /* creation of lcd_mutex */
+    lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* Create the semaphores(s) */
+    /* creation of report_pwr_semphr */
+    report_pwr_semphrHandle = osSemaphoreNew(1, 0, &report_pwr_semphr_attributes);
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* Create the timer(s) */
-  /* creation of tmr_report_pwr */
-  tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
+    /* Create the timer(s) */
+    /* creation of tmr_report_pwr */
+    tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of esp_rx_queue */
-  esp_rx_queueHandle = osMessageQueueNew (8, 255, &esp_rx_queue_attributes);
+    /* Create the queue(s) */
+    /* creation of esp_rx_queue */
+    esp_rx_queueHandle = osMessageQueueNew(8, 255, &esp_rx_queue_attributes);
 
-  /* creation of esp_tx_queue */
-  esp_tx_queueHandle = osMessageQueueNew (8, 255, &esp_tx_queue_attributes);
+    /* creation of esp_tx_queue */
+    esp_tx_queueHandle = osMessageQueueNew(8, 255, &esp_tx_queue_attributes);
 
-  /* creation of usr_cmd_queue */
-  usr_cmd_queueHandle = osMessageQueueNew (5, 2, &usr_cmd_queue_attributes);
+    /* creation of usr_cmd_queue */
+    usr_cmd_queueHandle = osMessageQueueNew(5, 2, &usr_cmd_queue_attributes);
 
-  /* creation of dcdc_param_queue */
-  dcdc_param_queueHandle = osMessageQueueNew (16, 10, &dcdc_param_queue_attributes);
+    /* creation of dcdc_param_queue */
+    dcdc_param_queueHandle = osMessageQueueNew(16, 10, &dcdc_param_queue_attributes);
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* creation of report_pwr_queue */
+    report_pwr_queueHandle = osMessageQueueNew(1, 50, &report_pwr_queue_attributes);
+
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of pwr_monitor */
-  pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
+    /* Create the thread(s) */
+    /* creation of pwr_monitor */
+    pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
 
-  /* creation of esp_msg */
-  esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
+    /* creation of esp_msg */
+    esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
 
-  /* creation of dcdc_ctrl */
-  dcdc_ctrlHandle = osThreadNew(dcdc_ctrl_tsk, NULL, &dcdc_ctrl_attributes);
+    /* creation of dcdc_ctrl */
+    dcdc_ctrlHandle = osThreadNew(dcdc_ctrl_tsk, NULL, &dcdc_ctrl_attributes);
 
-  /* creation of led_blink */
-  led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
+    /* creation of led_blink */
+    led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* creation of sys_stat */
-  sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
+    /* creation of sys_stat */
+    sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
 
-  /* USER CODE BEGIN RTOS_EVENTS */
+    /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE END RTOS_EVENTS */
 }
 
 /* USER CODE BEGIN Header_pwr_monitor_tsk */
@@ -229,112 +228,22 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_pwr_monitor_tsk */
 void pwr_monitor_tsk(void *argument)
 {
-  /* USER CODE BEGIN pwr_monitor_tsk */
+    /* USER CODE BEGIN pwr_monitor_tsk */
     uint32_t adc_value_buff[6];
     uint32_t adc_value_accumulate[6];
-
-    HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_SET);
-
-    /* Infinite loop */
-    for (;;)
-    {
-        // get ADC data 10 times
-        memset(adc_value_accumulate, 0, sizeof(adc_value_accumulate));
-        for (uint8_t i = 0; i < 10; i++)
-        {
-            // get ADC data
-            if (osMutexAcquire(adc_mutexHandle, 0) == osOK)
-            {
-                memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
-                osMutexRelease(adc_mutexHandle);
-                for (uint8_t j = 0; j < 6; j++)
-                {
-                    adc_value_accumulate[j] += adc_value_buff[j];
-                }
-            }
-        }
-        // get average ADC data
-        for (uint8_t i = 0; i < 6; i++)
-        {
-            adc_value_buff[i] = adc_value_accumulate[i] / 10;
-        }
-        // Calculate power data
-        sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE;
-        sys_pwr.bkup.voltage = adc_value_buff[1] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_BKUP;
-        sys_pwr.out.voltage = adc_value_buff[2] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE;
-        sys_pwr.mmc.current = (2.5 - (adc_value_buff[3] / ADC_COEFFICIENT)) / 0.1;
-        sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
-        //sys_pwr.bkup.current = adc_value_buff[4] / ADC_COEFFICIENT;
-        sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
-        sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
-        sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
-        sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
-
-        // Display ADC Data to LCD
-        if (osMutexAcquire(lcd_mutexHandle, 0) == osOK)
-        {
-            // if (0) {
-            //  Display ADC Data
-            LCD_SetAsciiFont(&ASCII_Font20);
-            LCD_SetColor(LCD_BLACK);
-            LCD_SetBackColor(LCD_WHITE);
-            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, sys_pwr.mmc.voltage, 5, 2);
-            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, sys_pwr.mmc.current, 5, 2);
-            LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, sys_pwr.mmc.power, 5, 2);
-            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, sys_pwr.bkup.voltage, 5, 2);
-            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, sys_pwr.bkup.current, 5, 4);
-            LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, sys_pwr.bkup.power, 5, 2);
-            LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_OUT_Y, sys_pwr.out.voltage, 5, 2);
-            LCD_DisplayDecimals(LCD_CURRENT_X, LCD_OUT_Y, sys_pwr.out.current, 5, 2);
-            LCD_DisplayDecimals(LCD_POWER_X, LCD_OUT_Y, sys_pwr.out.power, 5, 2);
-            osMutexRelease(lcd_mutexHandle);
-        }
-
-        if (sys_pwr.mmc.power > OVERLOAD_LIMIT || sys_pwr.bkup.power > OVERLOAD_LIMIT ||
-            sys_pwr.out.power > OVERLOAD_LIMIT)
-        {
-            osEventFlagsSet(sys_statHandle, SYS_OVERLD);
-
-            // disable DCDC
-            osThreadSuspend(dcdc_ctrlHandle);
-
-            // set timer duty ratio to zero
-            HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-
-            // display info on LCD
-            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
-            {
-                LCD_SetColor(LCD_RED);
-                LCD_SetBackColor(LCD_WHITE);
-                LCD_SetTextFont(&ASCII_Font20);
-                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
-                LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
-                osMutexRelease(lcd_mutexHandle);
-            }
-        }
-				
-        osDelay(1000);
-    }
-  /* USER CODE END pwr_monitor_tsk */
-}
-
-/* USER CODE BEGIN Header_led_blink_tsk */
-/**
- * @brief Function implementing the led_blink thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_led_blink_tsk */
-void led_blink_tsk(void *argument)
-{
-  /* USER CODE BEGIN led_blink_tsk */
-    /* Infinite loop */
     uint8_t eb_handled = 0;
+    uint8_t ovld_handled = 0;
+    uint8_t udld_handled = 0;
     osTimerStart(tmr_report_pwrHandle, 1000);
-    HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
+    osEventFlagsClear(sys_statHandle, SYS_OVERLD);
+    osEventFlagsClear(sys_statHandle, SYS_UNDRLD);
+    osEventFlagsSet(sys_statHandle, MMC_EN);
+    osEventFlagsSet(sys_statHandle, BKUP_EN);
+    HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
+
+    /* Infinite loop */
     for (;;)
     {
-        HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
         if (eb_scan())
         {
             eb_handled = 1;
@@ -346,16 +255,13 @@ void led_blink_tsk(void *argument)
             LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
             LCD_SetColor(LCD_WHITE);
             LCD_SetBackColor(LCD_RED);
+            LCD_SetAsciiFont(&ASCII_Font20);
             LCD_DisplayString(LCD_SYS_STAT_EMERGENCY_STOP_X, LCD_SYS_STAT_EMERGENCY_STOP_Y, "EMERGENCY");
             osMutexRelease(lcd_mutexHandle);
             osThreadSuspend(dcdc_ctrlHandle);
             // set timer duty ratio to zero
             HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
             // TODO: Cut off power sources and set duty ratio to zero
-        }
-        while (eb_scan())
-        {
-            osDelay(1);
         }
         if (!eb_scan() && eb_handled)
         {
@@ -365,20 +271,163 @@ void led_blink_tsk(void *argument)
             LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
             LCD_SetColor(LCD_BLACK);
             LCD_SetBackColor(LCD_GREEN);
+            LCD_SetAsciiFont(&ASCII_Font20);
             LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
             HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
             osThreadResume(dcdc_ctrlHandle);
-            // TODO: Check if the power should be resumed??
         }
-        osDelay(200);
+
+        // get ADC data 10 times
+        memset(adc_value_accumulate, 0, sizeof(adc_value_accumulate));
+        for (uint8_t i = 0; i < 100; i++)
+        {
+            // get ADC data
+            if (osMutexAcquire(adc_mutexHandle, 0) == osOK)
+            {
+                memcpy(adc_value_buff, adc1_data, sizeof(adc_value_buff));
+                osMutexRelease(adc_mutexHandle);
+                for (uint8_t j = 0; j < 6; j++)
+                {
+                    adc_value_accumulate[j] += adc_value_buff[j];
+                }
+            }
+						osDelay(10);
+        }
+        // get average ADC data
+        for (uint8_t i = 0; i < 6; i++)
+        {
+            adc_value_buff[i] = adc_value_accumulate[i] / 100;
+        }
+        // Calculate power data
+        sys_pwr.mmc.voltage = adc_value_buff[0] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_MMC;
+        sys_pwr.bkup.voltage = adc_value_buff[1] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_BKUP;
+        sys_pwr.out.voltage = adc_value_buff[2] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_MMC;
+        sys_pwr.mmc.current = (2.5 - (adc_value_buff[3] / ADC_COEFFICIENT)) / 0.1;
+        sys_pwr.bkup.current = (2.5 - (adc_value_buff[4] / ADC_COEFFICIENT)) / 0.1;
+        sys_pwr.out.current = (2.5 - (adc_value_buff[5] / ADC_COEFFICIENT)) / 0.1;
+        sys_pwr.mmc.power = sys_pwr.mmc.voltage * sys_pwr.mmc.current;
+        sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
+        sys_pwr.out.power = sys_pwr.out.voltage * sys_pwr.out.current;
+
+        // report power info to lcd and esp8266 (every one second)
+        xQueueOverwrite(report_pwr_queueHandle, &sys_pwr);
+
+        // overload protection
+        if ((sys_pwr.mmc.current > OVERLOAD_LIMIT || sys_pwr.bkup.current > OVERLOAD_LIMIT) && !ovld_handled)
+        {
+            ovld_handled = 1;
+            osEventFlagsSet(sys_statHandle, SYS_OVERLD);
+
+            // cut power
+            osEventFlagsClear(sys_statHandle, MMC_EN);
+            osEventFlagsClear(sys_statHandle, BKUP_EN);
+            HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+
+            // display info on LCD
+            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+            {
+                LCD_SetColor(LCD_RED);
+                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+                LCD_SetColor(LCD_WHITE);
+                LCD_SetBackColor(LCD_RED);
+                LCD_SetTextFont(&ASCII_Font20);
+                LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
+
+                LCD_SetColor(LCD_RED);
+                LCD_SetBackColor(LCD_WHITE);
+                if (sys_pwr.mmc.current > OVERLOAD_LIMIT)
+                {
+                    LCD_DisplayString(10, LCD_MMC_Y - 20, "OVLD");
+                }
+                if (sys_pwr.bkup.current > OVERLOAD_LIMIT)
+                {
+                    LCD_DisplayString(10, LCD_BKUP_Y - 20, "OVLD");
+                }
+                osMutexRelease(lcd_mutexHandle);
+            }
+            osDelay(100);
+            continue;
+        }
+
+        // underload protection
+        if ((sys_pwr.mmc.voltage < UNDERLOAD_VOLTAGE_LIMIT || sys_pwr.bkup.voltage < UNDERLOAD_VOLTAGE_LIMIT) &&
+            !udld_handled && !ovld_handled)
+        {
+            udld_handled = 1;
+            osEventFlagsSet(sys_statHandle, SYS_UNDRLD);
+            osEventFlagsSet(sys_statHandle, BKUP_EN);
+            osEventFlagsClear(sys_statHandle, MMC_EN);
+
+            // display info on LCD
+            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+            {
+                LCD_SetColor(LCD_YELLOW);
+                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+                LCD_SetTextFont(&ASCII_Font20);
+                LCD_SetColor(LCD_BLACK);
+                LCD_SetBackColor(LCD_YELLOW);
+                LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
+                osMutexRelease(lcd_mutexHandle);
+            }
+            // switch power
+            HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+            osDelay(100);
+            HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_SET);
+        }
+
+        // if the system is back in normal state
+        if (sys_pwr.mmc.voltage > UNDERLOAD_VOLTAGE_LIMIT * 1.3 && udld_handled && !ovld_handled)
+        {
+            udld_handled = 0;
+            osEventFlagsClear(sys_statHandle, SYS_UNDRLD);
+            osEventFlagsSet(sys_statHandle, MMC_EN);
+            osEventFlagsClear(sys_statHandle, BKUP_EN);
+            // display info on LCD
+            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+            {
+                LCD_SetColor(LCD_GREEN);
+                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+                LCD_SetColor(LCD_BLACK);
+                LCD_SetBackColor(LCD_GREEN);
+                LCD_SetTextFont(&ASCII_Font20);
+                LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
+                osMutexRelease(lcd_mutexHandle);
+            }
+            // switch power source
+            HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+            osDelay(100);
+            HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
+        }
+        osDelay(100);
     }
-  /* USER CODE END led_blink_tsk */
+    /* USER CODE END pwr_monitor_tsk */
+}
+
+/* USER CODE BEGIN Header_led_blink_tsk */
+/**
+ * @brief Function implementing the led_blink thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_led_blink_tsk */
+void led_blink_tsk(void *argument)
+{
+    /* USER CODE BEGIN led_blink_tsk */
+    /* Infinite loop */
+    uint8_t eb_handled = 0;
+    HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
+    for (;;)
+    {
+        HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
+        osDelay(500);
+    }
+    /* USER CODE END led_blink_tsk */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

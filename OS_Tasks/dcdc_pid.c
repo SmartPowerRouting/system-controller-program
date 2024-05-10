@@ -47,6 +47,12 @@ void dcdc_ctrl_tsk(void *argument)
 
     for (;;)
     {
+        if(1)
+        {
+            osDelay(1000);
+            continue;
+        }
+        // The following control part is not used
         last_last_error = last_error;
         last_error = error;
         last_duty_ratio = duty_ratio;

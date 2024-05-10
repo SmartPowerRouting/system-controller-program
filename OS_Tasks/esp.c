@@ -40,9 +40,12 @@ uint8_t esp_response[255] = {0};
 #define MQTT_QOS2 2
 
 // mqtt topic
-#define MQTT_TOPIC_STATUS "system/pwr"
-#define MQTT_TOPIC_WARN "system/warining"
+#define MQTT_TOPIC_STATUS "system/status"
+#define MQTT_TOPIC_WARN "system/warning"
 #define MQTT_TOPIC_USR_CMD "usr/cmd"
+
+// mqtt lwt msg
+#define MQTT_LWT_MSG "-1"
 
 extern uint8_t uart2_rx_data[255]; // UART2 DMA buffer
 extern uint8_t uart2_rx_flag;      // Flag to indicate that UART2 DMA has received data
@@ -52,9 +55,10 @@ uint8_t mqtt_recv_msg[255];        // MQTT received message
 extern uint32_t adc1_data[6]; // ADC data
 
 // Message queues
-extern osMessageQueueId_t esp_rx_queueHandle;  // ESP message queue
-extern osMessageQueueId_t esp_tx_queueHandle;  // MQTT message queue
-extern osMessageQueueId_t usr_cmd_queueHandle; // User command queue
+extern osMessageQueueId_t esp_rx_queueHandle;     // ESP message queue
+extern osMessageQueueId_t esp_tx_queueHandle;     // MQTT message queue
+extern osMessageQueueId_t usr_cmd_queueHandle;    // User command queue
+extern osMessageQueueId_t report_pwr_queueHandle; // Power report queue
 
 // Tasks
 extern osThreadId_t esp_msg_tskHandle; // ESP message task
@@ -65,6 +69,9 @@ extern osEventFlagsId_t sys_statHandle;
 // mutexes
 extern osMutexId_t adc_mutexHandle;
 extern osMutexId_t lcd_mutexHandle;
+
+// semaphores
+extern osSemaphoreId_t report_pwr_semphrHandle;
 
 /**
  * @brief ESP-12F initialization (in OS)
@@ -84,6 +91,8 @@ void esp_init_os(void)
     // Set UI
     osMutexAcquire(lcd_mutexHandle, osWaitForever);
     LCD_SetAsciiFont(&ASCII_Font16);
+    LCD_SetBackColor(LCD_WHITE);
+    LCD_SetColor(LCD_BLACK);
     LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
     LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Initializing...");
     osMutexRelease(lcd_mutexHandle);
@@ -114,6 +123,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Connecting...");
             osMutexRelease(lcd_mutexHandle);
@@ -122,8 +133,10 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
-            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE Error");
+            LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE ERR");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -132,12 +145,95 @@ void esp_init_os(void)
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "CWMODE Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
     osDelay(1000);
+
+    // MQTT USR CFGuration
+    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", MQTT_CLIENT_ID, MQTT_USER, MQTT_PWD);
+    HAL_UART_Transmit_DMA(&huart1, cmd, strlen(cmd));
+    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") != NULL)
+        {
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "USR CFG OK");
+            osMutexRelease(lcd_mutexHandle);
+        }
+        else
+        {
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "USR CFG ERR");
+            osMutexRelease(lcd_mutexHandle);
+            return;
+        }
+    }
+    else
+    {
+        osMutexAcquire(lcd_mutexHandle, osWaitForever);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
+        LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "USR CFG Timeout");
+        osMutexRelease(lcd_mutexHandle);
+        return;
+    }
+    osDelay(1000);
+
+    // MQTT connection config
+    // AT+MQTTCONNCFG=<LinkID>,<keepalive>,<disable_clean_session>,<"lwt_topic">,<"lwt_msg">,<lwt_qos>,<lwt_retain>
+    sprintf(cmd, "AT+MQTTCONNCFG=0,15,1,\"%s\",\"%s\",%d,1\r\n", MQTT_TOPIC_WARN, MQTT_LWT_MSG, MQTT_QOS2);
+    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
+    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
+    {
+        if (strstr((char *)esp_response_buff, "OK") != NULL)
+        {
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN CFG OK");
+            osMutexRelease(lcd_mutexHandle);
+        }
+        else
+        {
+            osMutexAcquire(lcd_mutexHandle, osWaitForever);
+            LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
+            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN CFG ERR");
+            osMutexRelease(lcd_mutexHandle);
+            return;
+        }
+    }
+    else
+    {
+        osMutexAcquire(lcd_mutexHandle, osWaitForever);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
+        LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN CFG Timeout");
+        osMutexRelease(lcd_mutexHandle);
+        return;
+    }
 
     // Connect to WiFi
     sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"\r\n", (uint8_t *)WIFI_SSID, (uint8_t *)WIFI_PWD);
@@ -148,6 +244,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, WIFI_SSID);
             osMutexRelease(lcd_mutexHandle);
@@ -158,6 +256,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Error");
             osMutexRelease(lcd_mutexHandle);
@@ -168,6 +268,8 @@ void esp_init_os(void)
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
         LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Timeout");
         osMutexRelease(lcd_mutexHandle);
@@ -176,42 +278,7 @@ void esp_init_os(void)
     osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, osWaitForever); // WIFI GOT IP \r\n OK
     osDelay(1000);
 
-    // MQTT configuration
-    sprintf(cmd, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n", MQTT_CLIENT_ID, MQTT_USER, MQTT_PWD);
-    HAL_UART_Transmit_DMA(&huart1, cmd, strlen(cmd));
-    HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
-    if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
-    {
-        if (strstr((char *)esp_response_buff, "OK") != NULL)
-        {
-            osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_SetAsciiFont(&ASCII_Font16);
-            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Success");
-            osMutexRelease(lcd_mutexHandle);
-        }
-        else
-        {
-            osMutexAcquire(lcd_mutexHandle, osWaitForever);
-            LCD_SetAsciiFont(&ASCII_Font16);
-            LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Error");
-            osMutexRelease(lcd_mutexHandle);
-            return;
-        }
-    }
-    else
-    {
-        osMutexAcquire(lcd_mutexHandle, osWaitForever);
-        LCD_SetAsciiFont(&ASCII_Font16);
-        LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "Config Timeout");
-        osMutexRelease(lcd_mutexHandle);
-        return;
-    }
-    osDelay(1000);
-
-		// connect to MQTT broker
+    // connect to MQTT broker
     sprintf(cmd, "AT+MQTTCONN=0,\"%s\",%d,1\r\n", MQTT_BROKER, MQTT_PORT); // enable auto reconnect
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 3000) == osOK)
@@ -220,6 +287,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
             LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
             LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
@@ -230,6 +299,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
             LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Error");
             osMutexRelease(lcd_mutexHandle);
@@ -240,14 +311,16 @@ void esp_init_os(void)
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
         LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
-		osDelay(1000);
-		
-		// MQTT subscribe to a topic
+    osDelay(1000);
+
+    // MQTT subscribe to a topic
     sprintf(cmd, "AT+MQTTSUB=0,\"%s\",2\r\n", MQTT_TOPIC_USR_CMD);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 1000) == osOK)
@@ -256,6 +329,8 @@ void esp_init_os(void)
         {
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetAsciiFont(&ASCII_Font16);
+            LCD_SetBackColor(LCD_WHITE);
+            LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
             LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Error");
             osMutexRelease(lcd_mutexHandle);
@@ -266,6 +341,8 @@ void esp_init_os(void)
     {
         osMutexAcquire(lcd_mutexHandle, osWaitForever);
         LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
         LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Timeout");
         osMutexRelease(lcd_mutexHandle);
@@ -294,6 +371,76 @@ void esp_msg_tsk(void *argument)
             HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
             osDelay(200);
         }
+
+        // Receive message
+        if (osMessageQueueGet(esp_rx_queueHandle, buff, NULL, 0) == osOK)
+        {
+            // Case a: WIFI Disconnected
+            // In this case, set system event flag
+            if (strstr((char *)buff, "WIFI DISCONNECT")!= NULL)
+            {
+                osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT);
+                HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
+
+                // display on LCD
+                osMutexAcquire(lcd_mutexHandle, osWaitForever);
+                LCD_SetAsciiFont(&ASCII_Font16);
+                LCD_SetBackColor(LCD_WHITE);
+                LCD_SetColor(LCD_BLACK);
+                LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
+                LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, "Disconnected");
+                osMutexRelease(lcd_mutexHandle);
+            }
+
+            // Case b: MQTT Disconnected
+            if (strstr((char *)buff, "MQTTDISCONNECTED")!= NULL)
+            {
+                osEventFlagsClear(sys_statHandle, MQTT_CONN_STAT);
+                HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
+
+                // display on LCD
+                osMutexAcquire(lcd_mutexHandle, osWaitForever);
+                LCD_SetAsciiFont(&ASCII_Font16);
+                LCD_SetBackColor(LCD_WHITE);
+                LCD_SetColor(LCD_BLACK);
+                LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+                LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
+                osMutexRelease(lcd_mutexHandle);
+            }
+
+            // Case c: WIFI reconnected
+            if (strstr((char *)buff, "WIFI GOT IP")!= NULL)
+            {
+                osEventFlagsSet(sys_statHandle, WIFI_CONN_STAT);
+                HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
+
+                // display on LCD
+                osMutexAcquire(lcd_mutexHandle, osWaitForever);
+                LCD_SetAsciiFont(&ASCII_Font16);
+                LCD_SetBackColor(LCD_WHITE);
+                LCD_SetColor(LCD_BLACK);
+                LCD_ClearRect(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, LCD_Width - LCD_WIFI_STAT_X, 16);
+                LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, WIFI_SSID);
+                osMutexRelease(lcd_mutexHandle);
+            }
+
+            // Case d: MQTT reconnected
+            if (strstr((char *)buff, "MQTTCONNECTED")!= NULL)
+            {
+                osEventFlagsSet(sys_statHandle, MQTT_CONN_STAT);
+                HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
+
+                // display on LCD
+                osMutexAcquire(lcd_mutexHandle, osWaitForever);
+                LCD_SetAsciiFont(&ASCII_Font16);
+                LCD_SetBackColor(LCD_WHITE);
+                LCD_SetColor(LCD_BLACK);
+                LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
+                LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
+                LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
+                osMutexRelease(lcd_mutexHandle);
+            }
+        }
     }
 }
 
@@ -309,37 +456,69 @@ void tmr_report_pwr_clbk(void *argument)
     uint16_t vmmc, vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout;
     uint32_t adc_to_send[6];
     uint8_t buff[255] = {0};
-    if (osMutexAcquire(adc_mutexHandle, 50) == osOK)
+    uint32_t sys_event = 0;
+    uint8_t pwr_src = 0; // 0: off, 1: MMC, 2: backup
+    sysPwrData_t pwrData_buff;
+
+    // get power data
+    if (osMessageQueueGet(report_pwr_queueHandle, &pwrData_buff, NULL, 100) != osOK)
     {
-        memcpy(adc_to_send, (uint32_t *)adc1_data, sizeof(adc_to_send));
-        osMutexRelease(adc_mutexHandle);
+        return;
+    }
+
+    // report to LCD screen
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        LCD_SetAsciiFont(&ASCII_Font20);
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 5, 2);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 5, 2);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 5, 2);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 5, 2);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 5, 2);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 5, 2);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_OUT_Y, pwrData_buff.out.voltage, 5, 2);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_OUT_Y, pwrData_buff.out.current, 5, 2);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_OUT_Y, pwrData_buff.out.power, 6, 2);
+        osMutexRelease(lcd_mutexHandle);
+    }
+
+    // get currently used power source
+    sys_event = osEventFlagsGet(sys_statHandle);
+
+    // get MQTT connection status; if not connected then return
+    if ((sys_event & MQTT_CONN_STAT) == 0 || (sys_event & WIFI_CONN_STAT) == 0)
+    {
+        return;
+    }
+
+    if (sys_event & MMC_EN)
+    {
+        pwr_src = 1;
+    }
+    else if (sys_event & BKUP_EN)
+    {
+        pwr_src = 2;
     }
     else
     {
-        return;
-    }
-
-    // get MQTT connection status; if not connected then return
-    if (!(osEventFlagsGet(sys_statHandle) & MQTT_CONN_STAT))
-    {
-        return;
+        pwr_src = 0;
     }
 
     // Send data to ESP8266
-    vmmc = voltage_current_format(adc_to_send[0] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE);
-    vbackup = voltage_current_format(adc_to_send[1] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE_BKUP);
-    vout = voltage_current_format(adc_to_send[2] / ADC_COEFFICIENT * ADC_COEFFICIENT_VOLTAGE);
-    immc = voltage_current_format((2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
-    ibackup = voltage_current_format((2.5 - (adc_to_send[4] / ADC_COEFFICIENT)) / 0.1);
-    iout = voltage_current_format((2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
-    pmmc = power_format(adc_to_send[0] / ADC_COEFFICIENT * (2.5 - (adc_to_send[3] / ADC_COEFFICIENT)) / 0.1);
-    pbackup = power_format(adc_to_send[1] / ADC_COEFFICIENT * (2.5 - (adc_to_send[4] / ADC_COEFFICIENT)) / 0.1);
-    pout = power_format(adc_to_send[2] / ADC_COEFFICIENT * (2.5 - (adc_to_send[5] / ADC_COEFFICIENT)) / 0.1);
+    vmmc = voltage_current_format(pwrData_buff.mmc.voltage);
+    vbackup = voltage_current_format(pwrData_buff.bkup.voltage);
+    vout = voltage_current_format(pwrData_buff.out.voltage);
+    immc = voltage_current_format(pwrData_buff.mmc.current);
+    ibackup = voltage_current_format(pwrData_buff.bkup.current);
+    iout = voltage_current_format(pwrData_buff.out.current);
+    pmmc = power_format(pwrData_buff.mmc.power);
+    pbackup = power_format(pwrData_buff.bkup.power);
+    pout = power_format(pwrData_buff.out.power);
 
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0 %d %d %d %d %d %d %d %d %d\",2,0\r\n", (char *)MQTT_TOPIC_STATUS,
-            vmmc, vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout);
-
-    // TODO: Fix the power report message
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0 %d %d %d %d %d %d %d %d %d %d\",2,0\r\n", (char *)MQTT_TOPIC_STATUS, vmmc,
+            vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout, pwr_src);
 
     osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }
