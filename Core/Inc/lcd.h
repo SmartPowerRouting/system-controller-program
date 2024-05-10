@@ -2,8 +2,7 @@
  * @file lcd.h
  * @author Tiantian Zhong
  * @brief ST7789 LCD Driver header file.
- * @version 0.1
- * @date 2024-04-12
+ * @date 2024-05-10
  * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024 Project 19.
  *
  */
