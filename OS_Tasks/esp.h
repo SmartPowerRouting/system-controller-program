@@ -12,41 +12,35 @@
 #ifndef __ESP_H
 #define __ESP_H
 
-#include "main.h"
-#include "usart.h"
-#include "gpio.h"
-#include "printf.h"
-#include "string.h"
+#include <stdint.h>
 
 // status code of response
 #define ESP_OK 0
 #define ESP_ERR 1
 
 // type of user commands
-#define CMD_SET_VOLTAGE 0
-#define CMD_SET_PWR_SRC 1   // Use MMC or backup
-#define CMD_SET_PWR_STAT 2  // Output ON/OFF
-
-// For CMD_SET_PWR_SRC command:
-#define CMD_USE_MMC 0
-#define CMD_USE_BKUP 1
+#define CMD_SET_VOLTAGE 1
+#define CMD_SET_PWR_STAT 0   // Use MMC or backup
 
 // For setting power status:
 #define CMD_PWR_OFF 0
-#define CMD_PWR_ON 1
+#define CMD_PWR_USE_MMC 1
+#define CMD_PWR_USE_BKUP 2
 
 // User command structure
 typedef struct
 {
-    uint8_t type;
-    uint8_t value;  // CMD_SET_VOLTAGE: 10-30 (unit: V)
+    uint8_t cmdType;
+    uint8_t cmdValue;  // CMD_SET_VOLTAGE: 10-30 (unit: V)
                     // CMD_SET_PWR_SRC: CMD_USE_MMC/CMD_USE_BKUP
                     // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
-} usrCmdFromESP_t;
+} usrCmd_t;
 
 // Function prototypes
-void esp_init(void);
-uint8_t esp_get_response();
-void esp_mqtt_report_pwr(float mmc_voltage, float mmc_current, float mmc_power, float bkup_voltage, float bkup_current, float bkup_power, float out_voltage, float out_current, float out_power);
+void esp_init_os(void);
+void esp_msg_tsk(void *argument);
+void tmr_report_pwr_clbk(void *argument);
+uint16_t voltage_current_format(float f);
+uint16_t power_format(float f);
 
 #endif // __ESP_H

@@ -64,10 +64,6 @@ uint32_t adc1_data[6]; // ADC1 DMA buffer
 
 volatile uint8_t os_running = 0; // Indicating if FreeRTOS has started
 
-float mmc_voltage, mmc_current, mmc_power;
-float bkup_voltage, bkup_current, bkup_power;
-float out_voltage, out_current, out_power;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,18 +113,10 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   MX_TIM3_Init();
-  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // LCD initialization
   SPI_LCD_Init ();
-
-  // Now turn on LCD backlight
-  LCD_Backlight_ON;
-	LCD_SetBackColor(LCD_WHITE);
-	LCD_SetColor(LCD_BLACK);
-	LCD_SetAsciiFont(&ASCII_Font20);
-	LCD_Clear();
-  LCD_DisplayString(0, 0, "System starting...");
+  LCD_UI_Init();
 
   // Make sure power supply is off
   HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
@@ -140,17 +128,14 @@ int main(void)
 	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
   // Network initialization
-  esp_init();
-	
-	__HAL_TIM_SetCompare(&htim3,TIM_CHANNEL_1,50);
+  // esp_init();
 
   // Start PWM generator
 	// NOTE: PWM generator should not be started until it connects the wireless controller
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
-	
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -168,6 +153,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
 		{
+			// we should never get here
 		}
     /* USER CODE END WHILE */
 
@@ -195,7 +181,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -215,7 +201,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
