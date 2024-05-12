@@ -18,13 +18,21 @@
 #define ESP_ERR 1
 
 // type of user commands
-#define CMD_SET_VOLTAGE 1
-#define CMD_SET_PWR_STAT 0 // Use MMC or backup
+#define CMD_PWR_OFF 0            // Use MMC or backup
+#define CMD_SMART_PWR_ROUTING 1  // Use power routing algorithm
+#define CMD_PWR_FOURCE_PRIMARY 2 // Force primary power source
+#define CMD_PWR_FOURCE_BACKUP 3  // Force backup power source
 
-// For setting power status:
-#define CMD_PWR_OFF 0
-#define CMD_PWR_USE_MMC 1
-#define CMD_PWR_USE_BKUP 2
+// command response
+#define RESP_CMD_OK 1
+#define RESP_CMD_ERR 0
+
+// warning code
+#define WARN_OFFLINE -1
+#define WARN_NORMAL 0
+#define WARN_OVERLOAD 1
+#define WARN_EB_PRESSED 2
+
 
 // User command structure
 typedef struct

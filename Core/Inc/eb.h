@@ -12,6 +12,8 @@
 #ifndef __EB_H
 #define __EB_H
 
+#include <stdint.h>
+
 uint8_t eb_scan();
 
 #endif // __EB_H

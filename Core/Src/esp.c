@@ -32,7 +32,7 @@ uint8_t esp_response[256] = {0};
 
 // mqtt client info
 #define MQTT_CLIENT_ID "WindPwr"
-#define MQTT_KEEPALIVE 60
+#define MQTT_KEEPALIVE 10
 
 // mqtt QoS
 #define MQTT_QOS0 0
@@ -45,12 +45,10 @@ uint8_t esp_response[256] = {0};
 #define MQTT_TOPIC_USR_CMD "usr/cmd"
 
 // mqtt lwt msg
-#define MQTT_LWT_MSG "-1"
+#define MQTT_LWT_MSG WARN_OFFLINE
 
 extern uint8_t uart2_rx_data[256]; // UART2 DMA buffer
 extern uint8_t uart2_rx_flag;      // Flag to indicate that UART2 DMA has received data
-uint8_t mqtt_recv_topic[256];      // MQTT received topic
-uint8_t mqtt_recv_msg[256];        // MQTT received message
 
 extern uint32_t adc1_data[6]; // ADC data
 
@@ -198,7 +196,8 @@ void esp_init_os(void)
 
     // MQTT connection config
     // AT+MQTTCONNCFG=<LinkID>,<keepalive>,<disable_clean_session>,<"lwt_topic">,<"lwt_msg">,<lwt_qos>,<lwt_retain>
-    sprintf(cmd, "AT+MQTTCONNCFG=0,15,1,\"%s\",\"%s\",%d,1\r\n", MQTT_TOPIC_WARN, MQTT_LWT_MSG, MQTT_QOS2);
+    sprintf(cmd, "AT+MQTTCONNCFG=0,%d,1,\"%s\",\"%d\",%d,1\r\n", MQTT_KEEPALIVE, MQTT_TOPIC_WARN, MQTT_LWT_MSG,
+            MQTT_QOS2);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
     {
@@ -303,7 +302,7 @@ void esp_init_os(void)
             LCD_SetBackColor(LCD_WHITE);
             LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Error");
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN ERR");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -315,7 +314,7 @@ void esp_init_os(void)
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Timeout");
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -333,7 +332,7 @@ void esp_init_os(void)
             LCD_SetBackColor(LCD_WHITE);
             LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
-            LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Error");
+            LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "SUBSCR ERR");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -345,7 +344,7 @@ void esp_init_os(void)
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
-        LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Timeout");
+        LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "SUBSCR Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -365,7 +364,10 @@ void esp_msg_tsk(void *argument)
     {
         osDelay(50);
         uint8_t buff[256] = {0};
-        uint8_t dummy; // dummy variable to store the message length
+        uint8_t dummy;              // dummy variable to store the message length
+        uint8_t mqtt_rx_topic[256]; // MQTT received topic
+        uint8_t mqtt_rx_msg[256];   // MQTT received message
+        usrCmd_t usr_cmd;           // User command
         // Send Message
         if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
         {
@@ -394,7 +396,7 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case b: MQTT Disconnected
-            if (strstr((char *)buff, "MQTTDISCONNECTED") != NULL)
+            if (strstr((char *)buff, "ECTED:0") != NULL)
             {
                 osEventFlagsClear(sys_statHandle, MQTT_CONN_STAT);
                 HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
@@ -440,6 +442,12 @@ void esp_msg_tsk(void *argument)
                 LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
                 LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
                 osMutexRelease(lcd_mutexHandle);
+            }
+
+            // Case e: Received MQTT msg
+            if (strstr((char *)buff, "+MQTTSUBRECV:0") != NULL)
+            {
+                osMessageQueuePut(mqtt_rx_msg_queueHandle, buff, 0, osWaitForever);
             }
         }
     }
@@ -493,7 +501,6 @@ void tmr_report_pwr_clbk(void *argument)
     {
         return;
     }
-
     if (sys_event & MMC_EN)
     {
         pwr_src = 1;
@@ -531,9 +538,21 @@ void tmr_report_pwr_clbk(void *argument)
  */
 void mqtt_msg_tsk(void *argument)
 {
+    volatile uint8_t buff[255] = {0};
+    volatile uint8_t buff_msg[60] = {0};
+    volatile uint8_t buff_topic[20] = {0};
+    volatile usrCmd_t usr_cmd;
     for (;;)
     {
-        osDelay(50);
+        osMessageQueueGet(mqtt_rx_msg_queueHandle, buff, NULL, osWaitForever);
+        if (sscanf((char *)buff, "+MQTTSUBRECV:0,\"%[^\"]\",%*d,%[^\r]", &buff_topic, &buff_msg) != NULL)
+        {
+            if ((char *)buff_topic == MQTT_TOPIC_USR_CMD)
+            {
+                // TODO: 写完它
+                osDelay(10);
+            }
+        }
     }
 }
 
