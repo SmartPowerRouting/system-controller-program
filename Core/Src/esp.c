@@ -55,10 +55,10 @@ uint8_t mqtt_recv_msg[256];        // MQTT received message
 extern uint32_t adc1_data[6]; // ADC data
 
 // Message queues
-extern osMessageQueueId_t esp_rx_queueHandle;     // ESP message queue
-extern osMessageQueueId_t esp_tx_queueHandle;     // MQTT message queue
-extern osMessageQueueId_t usr_cmd_queueHandle;    // User command queue
-extern osMessageQueueId_t report_pwr_queueHandle; // Power report queue
+extern osMessageQueueId_t esp_rx_queueHandle;      // ESP message queue
+extern osMessageQueueId_t esp_tx_queueHandle;      // MQTT message queue
+extern osMessageQueueId_t usr_cmd_queueHandle;     // User command queue
+extern osMessageQueueId_t report_pwr_queueHandle;  // Power report queue
 extern osMessageQueueId_t mqtt_rx_msg_queueHandle; // MQTT received message queue
 
 // Tasks
@@ -524,15 +524,14 @@ void tmr_report_pwr_clbk(void *argument)
     osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }
 
-
 /**
  * @brief Extract user response from MQTT message.
- * 
- * @param argument 
+ *
+ * @param argument
  */
 void mqtt_msg_tsk(void *argument)
 {
-    for(;;)
+    for (;;)
     {
         osDelay(50);
     }

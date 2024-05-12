@@ -1,11 +1,11 @@
 /**
  * @file esp.h
  * @author Tiantian Zhong (giant@zju.edu.cn)
- * @brief 
+ * @brief
  * @date 2024-05-10
- * 
+ *
  * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024 Project 19.
- * 
+ *
  */
 
 #ifndef __ESP_H
@@ -19,7 +19,7 @@
 
 // type of user commands
 #define CMD_SET_VOLTAGE 1
-#define CMD_SET_PWR_STAT 0   // Use MMC or backup
+#define CMD_SET_PWR_STAT 0 // Use MMC or backup
 
 // For setting power status:
 #define CMD_PWR_OFF 0
@@ -30,9 +30,9 @@
 typedef struct
 {
     uint8_t cmdType;
-    uint8_t cmdValue;  // CMD_SET_VOLTAGE: 10-30 (unit: V)
-                    // CMD_SET_PWR_SRC: CMD_USE_MMC/CMD_USE_BKUP
-                    // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
+    uint8_t cmdValue; // CMD_SET_VOLTAGE: 10-30 (unit: V)
+                      // CMD_SET_PWR_SRC: CMD_USE_MMC/CMD_USE_BKUP
+                      // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
 } usrCmd_t;
 
 // OS task function prototypes
