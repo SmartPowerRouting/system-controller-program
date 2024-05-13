@@ -258,22 +258,6 @@ void pwr_monitor_tsk(void *argument)
     /* Infinite loop */
     for (;;)
     {
-        sys_state = osEventFlagsGet(state_machineHandle);
-        switch (sys_state)  // handle state machine
-        {
-        case STATE_MACHINE_IDLE:
-            // osEventFlagsClear(sys_statHandle, MMC_EN);
-            // osEventFlagsClear(sys_statHandle, BKUP_EN);
-            // HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-            // HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
-            // osDelay(10);
-            // continue;
-            break;
-        // TODO: Finish other states
-
-        default:
-            break;
-        }
         if (eb_scan())
         {
             eb_handled = 1;

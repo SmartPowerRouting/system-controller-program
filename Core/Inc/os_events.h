@@ -13,13 +13,13 @@
 #define __OS_EVENTS_H
 
 // status of system components
-#define WIFI_CONN_STAT 1
-#define MQTT_CONN_STAT 2
-#define MMC_EN 4
-#define BKUP_EN 8
-#define SYS_OVERLD 16
-#define SYS_UNDRLD 32
-#define REPORT_PWR 64
+#define WIFI_CONN_STAT 0x01 << 0
+#define MQTT_CONN_STAT 0x01 << 1
+#define MMC_EN 0x01 << 2
+#define BKUP_EN 0x01 << 3
+#define SYS_OVERLD 0x01 << 4
+#define SYS_UNDRLD 0x01 << 5
+#define PWR_ROUTING 0x01 << 6
 
 // state machine
 #define STATE_MACHINE_IDLE 0               // Idle state, power output cut off
