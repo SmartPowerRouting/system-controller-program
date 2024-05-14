@@ -13,35 +13,47 @@
 
 #include <stdint.h>
 
-// status code of response
-#define ESP_OK 0
-#define ESP_ERR 1
+// mqtt client info
+#define MQTT_CLIENT_ID "WindPwr"
+#define MQTT_KEEPALIVE 10
+
+// mqtt topic
+#define MQTT_TOPIC_STATUS "system/status"
+#define MQTT_TOPIC_WARN "system/warning"
+#define MQTT_TOPIC_RESPONSE "system/response"
+#define MQTT_TOPIC_USR_CMD "usr/cmd"
+
+// mqtt lwt msg
+#define MQTT_LWT_MSG MQTT_WARN_OFFLINE
 
 // type of user commands
-#define CMD_PWR_OFF 0            // Use MMC or backup
-#define CMD_SMART_PWR_ROUTING 1  // Use power routing algorithm
-#define CMD_PWR_FOURCE_PRIMARY 2 // Force primary power source
-#define CMD_PWR_FOURCE_BACKUP 3  // Force backup power source
+#define CMD_PWR_OFF '0'           // Use MMC or backup
+#define CMD_SMART_PWR_ROUTING '1' // Use power routing algorithm
+#define CMD_PWR_FORCE_PRIMARY '2' // Force primary power source
+#define CMD_PWR_FORCE_BACKUP '3'  // Force backup power source
 
 // command response
 #define RESP_CMD_OK 1
 #define RESP_CMD_ERR 0
 
+// mqtt QoS
+#define MQTT_QOS0 0
+#define MQTT_QOS1 1
+#define MQTT_QOS2 2
+
 // warning code
-#define WARN_OFFLINE -1
-#define WARN_NORMAL 0
-#define WARN_OVERLOAD 1
-#define WARN_EB_PRESSED 2
+#define MQTT_WARN_OFFLINE -1
+#define MQTT_WARN_NORMAL 0
+#define MQTT_WARN_OVERLOAD 1
+#define MQTT_WARN_EB_PRESSED 2
 
-
-// User command structure
+// User command structure (used for setting voltage and currents)
 typedef struct
 {
-    uint8_t cmdType;
-    uint8_t cmdValue; // CMD_SET_VOLTAGE: 10-30 (unit: V)
-                      // CMD_SET_PWR_SRC: CMD_USE_MMC/CMD_USE_BKUP
-                      // CMD_SET_PWR_STAT: CMD_PWR_ON/CMD_PWR_OFF
-} usrCmd_t;
+    uint8_t voltage_backup_cut_in;
+    uint8_t voltage_backup_cut_out;
+    uint8_t current;
+} user_cmd_t;
 
 // OS task function prototypes
 void esp_msg_tsk(void *argument);
