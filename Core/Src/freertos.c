@@ -14,9 +14,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
 #include "cmsis_os.h"
+#include "main.h"
+#include "task.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -65,88 +65,68 @@ sysPwrData_t sys_pwr = {0};
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
 const osThreadAttr_t pwr_monitor_attributes = {
-  .name = "pwr_monitor",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "pwr_monitor",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_msg */
 osThreadId_t esp_msgHandle;
 const osThreadAttr_t esp_msg_attributes = {
-  .name = "esp_msg",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "esp_msg",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for led_blink */
 osThreadId_t led_blinkHandle;
 const osThreadAttr_t led_blink_attributes = {
-  .name = "led_blink",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "led_blink",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for mqtt_msg */
 osThreadId_t mqtt_msgHandle;
 const osThreadAttr_t mqtt_msg_attributes = {
-  .name = "mqtt_msg",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "mqtt_msg",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for report_stat */
 osThreadId_t report_statHandle;
 const osThreadAttr_t report_stat_attributes = {
-  .name = "report_stat",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "report_stat",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_rx_queue */
 osMessageQueueId_t esp_rx_queueHandle;
-const osMessageQueueAttr_t esp_rx_queue_attributes = {
-  .name = "esp_rx_queue"
-};
+const osMessageQueueAttr_t esp_rx_queue_attributes = {.name = "esp_rx_queue"};
 /* Definitions for esp_tx_queue */
 osMessageQueueId_t esp_tx_queueHandle;
-const osMessageQueueAttr_t esp_tx_queue_attributes = {
-  .name = "esp_tx_queue"
-};
+const osMessageQueueAttr_t esp_tx_queue_attributes = {.name = "esp_tx_queue"};
 /* Definitions for usr_cmd_queue */
 osMessageQueueId_t usr_cmd_queueHandle;
-const osMessageQueueAttr_t usr_cmd_queue_attributes = {
-  .name = "usr_cmd_queue"
-};
+const osMessageQueueAttr_t usr_cmd_queue_attributes = {.name = "usr_cmd_queue"};
 /* Definitions for report_pwr_queue */
 osMessageQueueId_t report_pwr_queueHandle;
-const osMessageQueueAttr_t report_pwr_queue_attributes = {
-  .name = "report_pwr_queue"
-};
+const osMessageQueueAttr_t report_pwr_queue_attributes = {.name = "report_pwr_queue"};
 /* Definitions for mqtt_rx_msg_queue */
 osMessageQueueId_t mqtt_rx_msg_queueHandle;
-const osMessageQueueAttr_t mqtt_rx_msg_queue_attributes = {
-  .name = "mqtt_rx_msg_queue"
-};
+const osMessageQueueAttr_t mqtt_rx_msg_queue_attributes = {.name = "mqtt_rx_msg_queue"};
 /* Definitions for tmr_report_pwr */
 osTimerId_t tmr_report_pwrHandle;
-const osTimerAttr_t tmr_report_pwr_attributes = {
-  .name = "tmr_report_pwr"
-};
+const osTimerAttr_t tmr_report_pwr_attributes = {.name = "tmr_report_pwr"};
 /* Definitions for adc_mutex */
 osMutexId_t adc_mutexHandle;
-const osMutexAttr_t adc_mutex_attributes = {
-  .name = "adc_mutex"
-};
+const osMutexAttr_t adc_mutex_attributes = {.name = "adc_mutex"};
 /* Definitions for lcd_mutex */
 osMutexId_t lcd_mutexHandle;
-const osMutexAttr_t lcd_mutex_attributes = {
-  .name = "lcd_mutex"
-};
+const osMutexAttr_t lcd_mutex_attributes = {.name = "lcd_mutex"};
 /* Definitions for sys_stat */
 osEventFlagsId_t sys_statHandle;
-const osEventFlagsAttr_t sys_stat_attributes = {
-  .name = "sys_stat"
-};
+const osEventFlagsAttr_t sys_stat_attributes = {.name = "sys_stat"};
 /* Definitions for state_machine */
 osEventFlagsId_t state_machineHandle;
-const osEventFlagsAttr_t state_machine_attributes = {
-  .name = "state_machine"
-};
+const osEventFlagsAttr_t state_machine_attributes = {.name = "state_machine"};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -163,86 +143,86 @@ extern void tmr_report_pwr_clbk(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
     os_running = 1;
-  /* USER CODE END Init */
-  /* Create the mutex(es) */
-  /* creation of adc_mutex */
-  adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
+    /* USER CODE END Init */
+    /* Create the mutex(es) */
+    /* creation of adc_mutex */
+    adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
 
-  /* creation of lcd_mutex */
-  lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
+    /* creation of lcd_mutex */
+    lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* Create the timer(s) */
-  /* creation of tmr_report_pwr */
-  tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
+    /* Create the timer(s) */
+    /* creation of tmr_report_pwr */
+    tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of esp_rx_queue */
-  esp_rx_queueHandle = osMessageQueueNew (8, 255, &esp_rx_queue_attributes);
+    /* Create the queue(s) */
+    /* creation of esp_rx_queue */
+    esp_rx_queueHandle = osMessageQueueNew(8, 255, &esp_rx_queue_attributes);
 
-  /* creation of esp_tx_queue */
-  esp_tx_queueHandle = osMessageQueueNew (8, 255, &esp_tx_queue_attributes);
+    /* creation of esp_tx_queue */
+    esp_tx_queueHandle = osMessageQueueNew(8, 255, &esp_tx_queue_attributes);
 
-  /* creation of usr_cmd_queue */
-  usr_cmd_queueHandle = osMessageQueueNew (2, 6, &usr_cmd_queue_attributes);
+    /* creation of usr_cmd_queue */
+    usr_cmd_queueHandle = osMessageQueueNew(2, 6, &usr_cmd_queue_attributes);
 
-  /* creation of report_pwr_queue */
-  report_pwr_queueHandle = osMessageQueueNew (1, 50, &report_pwr_queue_attributes);
+    /* creation of report_pwr_queue */
+    report_pwr_queueHandle = osMessageQueueNew(1, 50, &report_pwr_queue_attributes);
 
-  /* creation of mqtt_rx_msg_queue */
-  mqtt_rx_msg_queueHandle = osMessageQueueNew (4, 255, &mqtt_rx_msg_queue_attributes);
+    /* creation of mqtt_rx_msg_queue */
+    mqtt_rx_msg_queueHandle = osMessageQueueNew(4, 255, &mqtt_rx_msg_queue_attributes);
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of pwr_monitor */
-  pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
+    /* Create the thread(s) */
+    /* creation of pwr_monitor */
+    pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
 
-  /* creation of esp_msg */
-  esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
+    /* creation of esp_msg */
+    esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
 
-  /* creation of led_blink */
-  led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
+    /* creation of led_blink */
+    led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
 
-  /* creation of mqtt_msg */
-  mqtt_msgHandle = osThreadNew(mqtt_msg_tsk, NULL, &mqtt_msg_attributes);
+    /* creation of mqtt_msg */
+    mqtt_msgHandle = osThreadNew(mqtt_msg_tsk, NULL, &mqtt_msg_attributes);
 
-  /* creation of report_stat */
-  report_statHandle = osThreadNew(sys_stat_tsk, NULL, &report_stat_attributes);
+    /* creation of report_stat */
+    report_statHandle = osThreadNew(sys_stat_tsk, NULL, &report_stat_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* creation of sys_stat */
-  sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
+    /* creation of sys_stat */
+    sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
 
-  /* creation of state_machine */
-  state_machineHandle = osEventFlagsNew(&state_machine_attributes);
+    /* creation of state_machine */
+    state_machineHandle = osEventFlagsNew(&state_machine_attributes);
 
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* USER CODE END RTOS_EVENTS */
 }
 
 /* USER CODE BEGIN Header_pwr_monitor_tsk */
@@ -254,7 +234,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_pwr_monitor_tsk */
 void pwr_monitor_tsk(void *argument)
 {
-  /* USER CODE BEGIN pwr_monitor_tsk */
+    /* USER CODE BEGIN pwr_monitor_tsk */
     uint32_t adc_value_buff[6];
     uint32_t adc_value_accumulate[6];
     uint8_t eb_handled = 0;
@@ -437,9 +417,6 @@ void pwr_monitor_tsk(void *argument)
                 osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
                 osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
 
-                // display info on LCD
-                lcd_show_backup();
-
                 // switch power
                 HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
                 osDelay(100);
@@ -453,9 +430,6 @@ void pwr_monitor_tsk(void *argument)
                 osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
                 osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
 
-                // display info on LCD
-                lcd_show_normal();
-
                 // switch power source
                 HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
                 osDelay(100);
@@ -463,7 +437,7 @@ void pwr_monitor_tsk(void *argument)
             }
         }
     }
-  /* USER CODE END pwr_monitor_tsk */
+    /* USER CODE END pwr_monitor_tsk */
 }
 
 /* USER CODE BEGIN Header_led_blink_tsk */
@@ -475,7 +449,7 @@ void pwr_monitor_tsk(void *argument)
 /* USER CODE END Header_led_blink_tsk */
 void led_blink_tsk(void *argument)
 {
-  /* USER CODE BEGIN led_blink_tsk */
+    /* USER CODE BEGIN led_blink_tsk */
     /* Infinite loop */
     HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
     for (;;)
@@ -483,7 +457,7 @@ void led_blink_tsk(void *argument)
         HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
         osDelay(500);
     }
-  /* USER CODE END led_blink_tsk */
+    /* USER CODE END led_blink_tsk */
 }
 
 /* USER CODE BEGIN Header_sys_stat_tsk */
@@ -495,9 +469,10 @@ void led_blink_tsk(void *argument)
 /* USER CODE END Header_sys_stat_tsk */
 void sys_stat_tsk(void *argument)
 {
-  /* USER CODE BEGIN sys_stat_tsk */
+    /* USER CODE BEGIN sys_stat_tsk */
     uint8_t buff[256] = {0};
     uint8_t ovld_sent = 0, eb_sent = 0, normal_sent = 0;
+    uint8_t lcd_normal_handled = 0, lcd_bkup_handled = 0;
     uint32_t state_machine_flags = 0;
     /* Infinite loop */
     for (;;)
@@ -529,13 +504,26 @@ void sys_stat_tsk(void *argument)
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL, MQTT_QOS2);
             osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
         }
+
+        // handle displaying power source
+        if ((osEventFlagsGet(sys_statHandle) & EVENT_MMC_EN) && !lcd_normal_handled)
+        {
+            lcd_normal_handled = 1;
+            lcd_bkup_handled = 0;
+            lcd_show_normal();
+        }
+        if ((osEventFlagsGet(sys_statHandle) & EVENT_BKUP_EN) && !lcd_bkup_handled)
+        {
+            lcd_normal_handled = 0;
+            lcd_bkup_handled = 1;
+            lcd_show_backup();
+        }
         osDelay(10);
     }
-  /* USER CODE END sys_stat_tsk */
+    /* USER CODE END sys_stat_tsk */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

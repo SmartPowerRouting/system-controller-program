@@ -568,7 +568,7 @@ void mqtt_msg_tsk(void *argument)
                                 MQTT_QOS2);
                         osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
                     }
-                    lcd_show_normal();
+                    // lcd_show_normal();
                 }
                 if (buff_msg[0] == CMD_PWR_FORCE_PRIMARY) // force primary
                 {
@@ -577,7 +577,7 @@ void mqtt_msg_tsk(void *argument)
                     osEventFlagsClear(state_machineHandle, 0xFFFFFFU);
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_PWR_FORCE_PRIMARY);
                     sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,0\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK);
-                    lcd_show_normal();
+                    // lcd_show_normal();
                 }
                 if (buff_msg[0] == CMD_PWR_FORCE_BACKUP) // force backup
                 {
@@ -587,7 +587,7 @@ void mqtt_msg_tsk(void *argument)
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_PWR_FORCE_BACKUP);
                     sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,%d\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK, MQTT_QOS2,
                             1); // set to retain
-                    lcd_show_normal();
+                    // lcd_show_normal();
                 }
             }
             osDelay(10);
