@@ -164,6 +164,8 @@ void LCD_UI_Init();
 #define LCD_OUT_Y 264
 #define LCD_SYS_STAT_NORMAL_X (LCD_Width / 2 - 30)
 #define LCD_SYS_STAT_NORMAL_Y 60
+#define LCD_SYS_STAT_IDLE_X (LCD_Width / 2 - 20)
+#define LCD_SYS_STAT_IDLE_Y 60
 #define LCD_SYS_STAT_OVLD_X (LCD_Width / 2 - 40)
 #define LCD_SYS_STAT_OVLD_Y 60
 #define LCD_SYS_STAT_BKUP_X (LCD_Width / 2 - 30)

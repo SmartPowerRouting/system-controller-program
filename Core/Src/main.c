@@ -53,7 +53,8 @@ uint8_t uart2_rx_data[255];     // UART2 DMA buffer
 uint8_t uart2_rx_data_len;      // length of message received from UART2 in DMA buffer
 volatile uint8_t uart2_rx_flag; // Flag to indicate that UART2 DMA has received data
 
-uint32_t adc1_data[6]; // ADC1 DMA buffer
+uint32_t adc1_data[6];                                       // ADC1 DMA buffer
+float adc_current_base_mmc = 0., adc_current_base_bkup = 0.; // ADC current base values
 
 volatile uint8_t os_running = 0; // Indicating if FreeRTOS has started
 
@@ -124,6 +125,20 @@ int main(void)
     HAL_ADCEx_Calibration_Start(&hadc1);
     HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
     HAL_Delay(1000);
+
+    // ADC current channels calibration
+    volatile uint32_t tmp[2] = {0};
+    for (uint8_t i = 0; i < 20; i++)
+    {
+        tmp[0] += adc1_data[3];
+        tmp[1] += adc1_data[4];
+        HAL_Delay(10);
+    }
+    tmp[0] /= 20;
+    tmp[1] /= 20;
+    adc_current_base_mmc = (float)tmp[0] / ADC_COEFFICIENT;
+    adc_current_base_bkup = (float)tmp[1] / ADC_COEFFICIENT;
+
   /* USER CODE END 2 */
 
   /* Init scheduler */

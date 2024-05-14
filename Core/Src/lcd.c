@@ -1268,20 +1268,16 @@ void LCD_UI_Init()
     LCD_SetAsciiFont(&ASCII_Font24);
     LCD_Clear();
 
-    LCD_DisplayString(54, 92, "WIND TURBINE");
-    LCD_DisplayString(34, 164, "BACKUP POWER SRC");
-    LCD_DisplayString(42, 236, "SYSTEM OUTPUT");
+    LCD_DisplayString(50, 92, "WIND TURBINE");
+    LCD_DisplayString(45, 164, "SECONDARY SRC");
 
     LCD_SetAsciiFont(&ASCII_Font20);
     LCD_DisplayChar(60, LCD_MMC_Y, 'V');
     LCD_DisplayChar(60, LCD_BKUP_Y, 'V');
-    LCD_DisplayChar(60, LCD_OUT_Y, 'V');
     LCD_DisplayChar(140, LCD_MMC_Y, 'A');
     LCD_DisplayChar(140, LCD_BKUP_Y, 'A');
-    LCD_DisplayChar(140, LCD_OUT_Y, 'A');
     LCD_DisplayChar(230, LCD_MMC_Y, 'W');
     LCD_DisplayChar(230, LCD_BKUP_Y, 'W');
-    LCD_DisplayChar(230, LCD_OUT_Y, 'W');
 
     LCD_SetAsciiFont(&ASCII_Font16);
     LCD_DisplayString(16, LCD_WIFI_STAT_Y, "WIFI: ");
@@ -1294,5 +1290,6 @@ void LCD_UI_Init()
     LCD_DrawRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
     LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
     LCD_SetColor(LCD_BLACK);
-    LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
+    LCD_DisplayString(LCD_SYS_STAT_IDLE_X, LCD_SYS_STAT_IDLE_Y, "IDLE");
 }
+

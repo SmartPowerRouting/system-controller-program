@@ -50,9 +50,9 @@
 // User command structure (used for setting voltage and currents)
 typedef struct
 {
-    uint8_t voltage_backup_cut_in;
-    uint8_t voltage_backup_cut_out;
-    uint8_t current;
+    uint16_t voltage_backup_cut_in;
+    uint16_t voltage_backup_cut_out;
+    uint16_t current;
 } user_cmd_t;
 
 // OS task function prototypes
@@ -64,5 +64,13 @@ void mqtt_msg_tsk(void *argument);
 void esp_init_os(void);
 uint16_t voltage_current_format(float f);
 uint16_t power_format(float f);
+
+// lcd helper functions
+void lcd_show_idle();
+void lcd_show_normal();
+void lcd_show_overload();
+void lcd_show_eb();
+void lcd_show_backup();
+void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit);
 
 #endif // __ESP_H

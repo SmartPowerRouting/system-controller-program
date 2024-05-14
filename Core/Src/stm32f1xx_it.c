@@ -335,12 +335,13 @@ void USART2_IRQHandler(void)
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
 		// if (!os_running)
-    if(1)
-    {
-      printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
-    }
+    //if(1)
+    //{
+    //  printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+    //}
     if (os_running)
     {
+      if (strstr(uart2_rx_data, "busy p...") == NULL)
       osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     }
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
