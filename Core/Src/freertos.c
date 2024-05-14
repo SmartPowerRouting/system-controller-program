@@ -14,9 +14,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
 #include "cmsis_os.h"
+#include "main.h"
+#include "task.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -27,6 +27,7 @@
 #include "os_events.h"
 #include "queue.h"
 #include "usart.h"
+#include <stdio.h>
 #include <string.h>
 
 /* USER CODE END Includes */
@@ -61,81 +62,68 @@ sysPwrData_t sys_pwr = {0};
 /* Definitions for pwr_monitor */
 osThreadId_t pwr_monitorHandle;
 const osThreadAttr_t pwr_monitor_attributes = {
-  .name = "pwr_monitor",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "pwr_monitor",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_msg */
 osThreadId_t esp_msgHandle;
 const osThreadAttr_t esp_msg_attributes = {
-  .name = "esp_msg",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "esp_msg",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for led_blink */
 osThreadId_t led_blinkHandle;
 const osThreadAttr_t led_blink_attributes = {
-  .name = "led_blink",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "led_blink",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for mqtt_msg */
 osThreadId_t mqtt_msgHandle;
 const osThreadAttr_t mqtt_msg_attributes = {
-  .name = "mqtt_msg",
-  .stack_size = 1050 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "mqtt_msg",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for report_stat */
+osThreadId_t report_statHandle;
+const osThreadAttr_t report_stat_attributes = {
+    .name = "report_stat",
+    .stack_size = 1050 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for esp_rx_queue */
 osMessageQueueId_t esp_rx_queueHandle;
-const osMessageQueueAttr_t esp_rx_queue_attributes = {
-  .name = "esp_rx_queue"
-};
+const osMessageQueueAttr_t esp_rx_queue_attributes = {.name = "esp_rx_queue"};
 /* Definitions for esp_tx_queue */
 osMessageQueueId_t esp_tx_queueHandle;
-const osMessageQueueAttr_t esp_tx_queue_attributes = {
-  .name = "esp_tx_queue"
-};
+const osMessageQueueAttr_t esp_tx_queue_attributes = {.name = "esp_tx_queue"};
 /* Definitions for usr_cmd_queue */
 osMessageQueueId_t usr_cmd_queueHandle;
-const osMessageQueueAttr_t usr_cmd_queue_attributes = {
-  .name = "usr_cmd_queue"
-};
+const osMessageQueueAttr_t usr_cmd_queue_attributes = {.name = "usr_cmd_queue"};
 /* Definitions for report_pwr_queue */
 osMessageQueueId_t report_pwr_queueHandle;
-const osMessageQueueAttr_t report_pwr_queue_attributes = {
-  .name = "report_pwr_queue"
-};
+const osMessageQueueAttr_t report_pwr_queue_attributes = {.name = "report_pwr_queue"};
 /* Definitions for mqtt_rx_msg_queue */
 osMessageQueueId_t mqtt_rx_msg_queueHandle;
-const osMessageQueueAttr_t mqtt_rx_msg_queue_attributes = {
-  .name = "mqtt_rx_msg_queue"
-};
+const osMessageQueueAttr_t mqtt_rx_msg_queue_attributes = {.name = "mqtt_rx_msg_queue"};
 /* Definitions for tmr_report_pwr */
 osTimerId_t tmr_report_pwrHandle;
-const osTimerAttr_t tmr_report_pwr_attributes = {
-  .name = "tmr_report_pwr"
-};
+const osTimerAttr_t tmr_report_pwr_attributes = {.name = "tmr_report_pwr"};
 /* Definitions for adc_mutex */
 osMutexId_t adc_mutexHandle;
-const osMutexAttr_t adc_mutex_attributes = {
-  .name = "adc_mutex"
-};
+const osMutexAttr_t adc_mutex_attributes = {.name = "adc_mutex"};
 /* Definitions for lcd_mutex */
 osMutexId_t lcd_mutexHandle;
-const osMutexAttr_t lcd_mutex_attributes = {
-  .name = "lcd_mutex"
-};
+const osMutexAttr_t lcd_mutex_attributes = {.name = "lcd_mutex"};
 /* Definitions for sys_stat */
 osEventFlagsId_t sys_statHandle;
-const osEventFlagsAttr_t sys_stat_attributes = {
-  .name = "sys_stat"
-};
+const osEventFlagsAttr_t sys_stat_attributes = {.name = "sys_stat"};
 /* Definitions for state_machine */
 osEventFlagsId_t state_machineHandle;
-const osEventFlagsAttr_t state_machine_attributes = {
-  .name = "state_machine"
-};
+const osEventFlagsAttr_t state_machine_attributes = {.name = "state_machine"};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -146,90 +134,94 @@ void pwr_monitor_tsk(void *argument);
 extern void esp_msg_tsk(void *argument);
 void led_blink_tsk(void *argument);
 extern void mqtt_msg_tsk(void *argument);
+void sys_stat_tsk(void *argument);
 extern void tmr_report_pwr_clbk(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
     os_running = 1;
-  /* USER CODE END Init */
-  /* Create the mutex(es) */
-  /* creation of adc_mutex */
-  adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
+    /* USER CODE END Init */
+    /* Create the mutex(es) */
+    /* creation of adc_mutex */
+    adc_mutexHandle = osMutexNew(&adc_mutex_attributes);
 
-  /* creation of lcd_mutex */
-  lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
+    /* creation of lcd_mutex */
+    lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* Create the timer(s) */
-  /* creation of tmr_report_pwr */
-  tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
+    /* Create the timer(s) */
+    /* creation of tmr_report_pwr */
+    tmr_report_pwrHandle = osTimerNew(tmr_report_pwr_clbk, osTimerPeriodic, NULL, &tmr_report_pwr_attributes);
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of esp_rx_queue */
-  esp_rx_queueHandle = osMessageQueueNew (8, 255, &esp_rx_queue_attributes);
+    /* Create the queue(s) */
+    /* creation of esp_rx_queue */
+    esp_rx_queueHandle = osMessageQueueNew(8, 255, &esp_rx_queue_attributes);
 
-  /* creation of esp_tx_queue */
-  esp_tx_queueHandle = osMessageQueueNew (8, 255, &esp_tx_queue_attributes);
+    /* creation of esp_tx_queue */
+    esp_tx_queueHandle = osMessageQueueNew(8, 255, &esp_tx_queue_attributes);
 
-  /* creation of usr_cmd_queue */
-  usr_cmd_queueHandle = osMessageQueueNew (5, 2, &usr_cmd_queue_attributes);
+    /* creation of usr_cmd_queue */
+    usr_cmd_queueHandle = osMessageQueueNew(5, 2, &usr_cmd_queue_attributes);
 
-  /* creation of report_pwr_queue */
-  report_pwr_queueHandle = osMessageQueueNew (1, 50, &report_pwr_queue_attributes);
+    /* creation of report_pwr_queue */
+    report_pwr_queueHandle = osMessageQueueNew(1, 50, &report_pwr_queue_attributes);
 
-  /* creation of mqtt_rx_msg_queue */
-  mqtt_rx_msg_queueHandle = osMessageQueueNew (4, 255, &mqtt_rx_msg_queue_attributes);
+    /* creation of mqtt_rx_msg_queue */
+    mqtt_rx_msg_queueHandle = osMessageQueueNew(4, 255, &mqtt_rx_msg_queue_attributes);
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of pwr_monitor */
-  pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
+    /* Create the thread(s) */
+    /* creation of pwr_monitor */
+    pwr_monitorHandle = osThreadNew(pwr_monitor_tsk, NULL, &pwr_monitor_attributes);
 
-  /* creation of esp_msg */
-  esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
+    /* creation of esp_msg */
+    esp_msgHandle = osThreadNew(esp_msg_tsk, NULL, &esp_msg_attributes);
 
-  /* creation of led_blink */
-  led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
+    /* creation of led_blink */
+    led_blinkHandle = osThreadNew(led_blink_tsk, NULL, &led_blink_attributes);
 
-  /* creation of mqtt_msg */
-  mqtt_msgHandle = osThreadNew(mqtt_msg_tsk, NULL, &mqtt_msg_attributes);
+    /* creation of mqtt_msg */
+    mqtt_msgHandle = osThreadNew(mqtt_msg_tsk, NULL, &mqtt_msg_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* creation of report_stat */
+    report_statHandle = osThreadNew(sys_stat_tsk, NULL, &report_stat_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* creation of sys_stat */
-  sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
+    /* creation of sys_stat */
+    sys_statHandle = osEventFlagsNew(&sys_stat_attributes);
 
-  /* creation of state_machine */
-  state_machineHandle = osEventFlagsNew(&state_machine_attributes);
+    /* creation of state_machine */
+    state_machineHandle = osEventFlagsNew(&state_machine_attributes);
 
-  /* USER CODE BEGIN RTOS_EVENTS */
+    /* USER CODE BEGIN RTOS_EVENTS */
     // Initialize state machine
     osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
-  /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE END RTOS_EVENTS */
 }
 
 /* USER CODE BEGIN Header_pwr_monitor_tsk */
@@ -241,28 +233,43 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_pwr_monitor_tsk */
 void pwr_monitor_tsk(void *argument)
 {
-  /* USER CODE BEGIN pwr_monitor_tsk */
+    /* USER CODE BEGIN pwr_monitor_tsk */
     uint32_t adc_value_buff[6];
     uint32_t adc_value_accumulate[6];
     uint8_t eb_handled = 0;
     uint8_t ovld_handled = 0;
     uint8_t udld_handled = 0;
     uint8_t sys_state = 0; // state machine
+
+    uint8_t voltage_backup_cut_in = 0;
+    uint8_t voltage_backup_cut_out = 0;
+    uint8_t current_limit = 100;
+    uint32_t state_machine_flags = 0;
+
+    user_cmd_t user_cmd = {0};
+
     osTimerStart(tmr_report_pwrHandle, 1000);
-    osEventFlagsClear(sys_statHandle, SYS_OVERLD);
-    osEventFlagsClear(sys_statHandle, SYS_UNDRLD);
-    osEventFlagsSet(sys_statHandle, MMC_EN);
-    osEventFlagsSet(sys_statHandle, BKUP_EN);
-    HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
+    osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
+    HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
 
     /* Infinite loop */
     for (;;)
     {
-        if (eb_scan())
+        if (eb_scan()) // EB pressed
         {
             eb_handled = 1;
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_SET);
             HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_RESET);
+
+            // cut power
+            osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
+            osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
+            HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+
+            // display info on LCD
+            osEventFlagsSet(sys_statHandle, EVENT_EB_PRESSED);
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_ClearRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
             LCD_SetColor(LCD_RED);
@@ -273,9 +280,11 @@ void pwr_monitor_tsk(void *argument)
             LCD_DisplayString(LCD_SYS_STAT_EMERGENCY_STOP_X, LCD_SYS_STAT_EMERGENCY_STOP_Y, "EMERGENCY");
             osMutexRelease(lcd_mutexHandle);
         }
-        if (!eb_scan() && eb_handled)
+        if (!eb_scan() && eb_handled) // EB released
         {
             eb_handled = 0;
+
+            // display info
             osMutexAcquire(lcd_mutexHandle, osWaitForever);
             LCD_SetColor(LCD_GREEN);
             LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
@@ -284,6 +293,9 @@ void pwr_monitor_tsk(void *argument)
             LCD_SetAsciiFont(&ASCII_Font20);
             LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
             osMutexRelease(lcd_mutexHandle);
+
+            // clear flags
+            osEventFlagsClear(sys_statHandle, EVENT_EB_PRESSED);
             HAL_GPIO_WritePin(FAULT_GPIO_Port, FAULT_Pin, GPIO_PIN_RESET);
         }
 
@@ -323,14 +335,14 @@ void pwr_monitor_tsk(void *argument)
         xQueueOverwrite(report_pwr_queueHandle, &sys_pwr);
 
         // overload protection
-        if ((sys_pwr.mmc.current > OVERLOAD_LIMIT || sys_pwr.bkup.current > OVERLOAD_LIMIT) && !ovld_handled)
+        if ((sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit) && !ovld_handled)
         {
             ovld_handled = 1;
-            osEventFlagsSet(sys_statHandle, SYS_OVERLD);
+            osEventFlagsSet(sys_statHandle, EVENT_OVERLD);
 
             // cut power
-            osEventFlagsClear(sys_statHandle, MMC_EN);
-            osEventFlagsClear(sys_statHandle, BKUP_EN);
+            osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
+            osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
             HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
             HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
 
@@ -346,72 +358,119 @@ void pwr_monitor_tsk(void *argument)
 
                 LCD_SetColor(LCD_RED);
                 LCD_SetBackColor(LCD_WHITE);
-                if (sys_pwr.mmc.current > OVERLOAD_LIMIT)
+                if (sys_pwr.mmc.current > current_limit)
                 {
                     LCD_DisplayString(10, LCD_MMC_Y - 20, "OVLD");
                 }
-                if (sys_pwr.bkup.current > OVERLOAD_LIMIT)
+                if (sys_pwr.bkup.current > current_limit)
                 {
                     LCD_DisplayString(10, LCD_BKUP_Y - 20, "OVLD");
                 }
                 osMutexRelease(lcd_mutexHandle);
             }
-            osDelay(100);
+            osDelay(50);
             continue;
         }
 
-        // underload protection
-        if ((sys_pwr.mmc.voltage < UNDERLOAD_VOLTAGE_LIMIT || sys_pwr.bkup.voltage < UNDERLOAD_VOLTAGE_LIMIT) &&
-            !udld_handled && !ovld_handled)
-        {
-            udld_handled = 1;
-            osEventFlagsSet(sys_statHandle, SYS_UNDRLD);
-            osEventFlagsSet(sys_statHandle, BKUP_EN);
-            osEventFlagsClear(sys_statHandle, MMC_EN);
+        state_machine_flags = osEventFlagsGet(state_machineHandle);
 
-            // display info on LCD
-            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
-            {
-                LCD_SetColor(LCD_YELLOW);
-                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
-                LCD_SetTextFont(&ASCII_Font20);
-                LCD_SetColor(LCD_BLACK);
-                LCD_SetBackColor(LCD_YELLOW);
-                LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
-                osMutexRelease(lcd_mutexHandle);
-            }
-            // switch power
+        if (state_machine_flags & (STATE_MACHINE_IDLE | STATE_MACHINE_EB | STATE_MACHINE_OVERLD) != 0)
+        {
+            osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
+            osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
+            HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+            osDelay(50);
+            continue;
+        }
+
+        if (state_machine_flags & STATE_MACHINE_PWR_FORCE_BACKUP != 0)
+        {
+            osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
+            osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
             HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
             osDelay(100);
             HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_SET);
+            osDelay(50);
+            continue;
         }
 
-        // if the system is back in normal state
-        if (sys_pwr.mmc.voltage > UNDERLOAD_VOLTAGE_LIMIT * 1.3 && udld_handled && !ovld_handled)
+        if (state_machine_flags & STATE_MACHINE_PWR_FORCE_PRIMARY != 0)
         {
-            udld_handled = 0;
-            osEventFlagsClear(sys_statHandle, SYS_UNDRLD);
-            osEventFlagsSet(sys_statHandle, MMC_EN);
-            osEventFlagsClear(sys_statHandle, BKUP_EN);
-            // display info on LCD
-            if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
-            {
-                LCD_SetColor(LCD_GREEN);
-                LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
-                LCD_SetColor(LCD_BLACK);
-                LCD_SetBackColor(LCD_GREEN);
-                LCD_SetTextFont(&ASCII_Font20);
-                LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
-                osMutexRelease(lcd_mutexHandle);
-            }
-            // switch power source
+            osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
+            osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
             HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
             osDelay(100);
             HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
+            osDelay(50);
+            continue;
         }
-        osDelay(100);
+
+        if (state_machine_flags & STATE_MACHINE_PWR_ROUTING != 0)
+        {
+            // smart power routing
+            // Update smart power routing parameters
+            if (osMessageQueueGet(usr_cmd_queueHandle, &user_cmd, NULL, 0) == osOK)
+            {
+                voltage_backup_cut_in = user_cmd.voltage_backup_cut_in;
+                voltage_backup_cut_out = user_cmd.voltage_backup_cut_out;
+                current_limit = user_cmd.current;
+            }
+            if ((sys_pwr.mmc.voltage < voltage_backup_cut_in) && !udld_handled && !ovld_handled)
+            {
+                udld_handled = 1;
+                osEventFlagsSet(sys_statHandle, EVENT_UNDRLD);
+                osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
+                osEventFlagsClear(sys_statHandle, EVENT_MMC_EN);
+
+                // display info on LCD
+                if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+                {
+                    LCD_SetColor(LCD_YELLOW);
+                    LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH,
+                                 LCD_SYS_STAT_BOX_HEIGHT);
+                    LCD_SetTextFont(&ASCII_Font20);
+                    LCD_SetColor(LCD_BLACK);
+                    LCD_SetBackColor(LCD_YELLOW);
+                    LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
+                    osMutexRelease(lcd_mutexHandle);
+                }
+
+                // switch power
+                HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+                osDelay(100);
+                HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_SET);
+            }
+
+            // if the system is back in normal state
+            if (sys_pwr.mmc.voltage > voltage_backup_cut_out && udld_handled && !ovld_handled)
+            {
+                udld_handled = 0;
+                osEventFlagsClear(sys_statHandle, EVENT_UNDRLD);
+                osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
+                osEventFlagsClear(sys_statHandle, EVENT_BKUP_EN);
+
+                // display info on LCD
+                if (osMutexAcquire(lcd_mutexHandle, osWaitForever) == osOK)
+                {
+                    LCD_SetColor(LCD_GREEN);
+                    LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH,
+                                 LCD_SYS_STAT_BOX_HEIGHT);
+                    LCD_SetColor(LCD_BLACK);
+                    LCD_SetBackColor(LCD_GREEN);
+                    LCD_SetTextFont(&ASCII_Font20);
+                    LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
+                    osMutexRelease(lcd_mutexHandle);
+                }
+
+                // switch power source
+                HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+                osDelay(100);
+                HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
+            }
+        }
     }
-  /* USER CODE END pwr_monitor_tsk */
+    /* USER CODE END pwr_monitor_tsk */
 }
 
 /* USER CODE BEGIN Header_led_blink_tsk */
@@ -423,7 +482,7 @@ void pwr_monitor_tsk(void *argument)
 /* USER CODE END Header_led_blink_tsk */
 void led_blink_tsk(void *argument)
 {
-  /* USER CODE BEGIN led_blink_tsk */
+    /* USER CODE BEGIN led_blink_tsk */
     /* Infinite loop */
     HAL_GPIO_WritePin(OS_STAT_GPIO_Port, OS_STAT_Pin, GPIO_PIN_SET);
     for (;;)
@@ -431,11 +490,48 @@ void led_blink_tsk(void *argument)
         HAL_GPIO_TogglePin(OS_STAT_GPIO_Port, OS_STAT_Pin);
         osDelay(500);
     }
-  /* USER CODE END led_blink_tsk */
+    /* USER CODE END led_blink_tsk */
+}
+
+/* USER CODE BEGIN Header_sys_stat_tsk */
+/**
+ * @brief Function implementing the sys_stat thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_sys_stat_tsk */
+void sys_stat_tsk(void *argument)
+{
+    /* USER CODE BEGIN sys_stat_tsk */
+    uint8_t buff[256] = {0};
+    /* Infinite loop */
+    for (;;)
+    {
+        if (osEventFlagsWait(state_machineHandle, STATE_MACHINE_OVERLD, osFlagsNoClear, 0) == osOK)
+        {
+            sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0", MQTT_TOPIC_WARN, MQTT_WARN_OVERLOAD, MQTT_QOS2);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+        }
+        if (osEventFlagsWait(state_machineHandle, STATE_MACHINE_EB, osFlagsNoClear, 0) == osOK)
+        {
+            sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0", MQTT_TOPIC_WARN, MQTT_WARN_EB_PRESSED, MQTT_QOS2);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+        }
+        if (osEventFlagsWait(state_machineHandle, STATE_MACHINE_IDLE, osFlagsNoClear, 0) == osOK)
+        {
+            sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL, MQTT_QOS2);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+        }
+        osDelay(100);
+    }
+    /* USER CODE END sys_stat_tsk */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-/* USER CODE END Application */
+/*
+ * --------------------- Power Relay Operation Functions ------------------
+ */
 
+/* USER CODE END Application */
