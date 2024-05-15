@@ -35,8 +35,8 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-#define ADC_COEFFICIENT 1317.00
-#define ADC_COEFFICIENT_VOLTAGE_BKUP 10.
+#define ADC_COEFFICIENT 1320.00
+#define ADC_COEFFICIENT_VOLTAGE_BKUP 5.4
 #define ADC_COEFFICIENT_VOLTAGE_MMC 4.
 #define ADC_COEFFICIENT_VOLTAGE 16.
 /* USER CODE END Private defines */
@@ -61,8 +61,13 @@ typedef struct
 {
   pwrDataSingleSrc_t mmc;
   pwrDataSingleSrc_t bkup;
-  pwrDataSingleSrc_t out;
+  uint8_t pwr_src; // 0: off, 1: MMC, 2: backup
 } sysPwrData_t;
+
+#define PWR_SRC_OFF 0
+#define PWR_SRC_MMC 1
+#define PWR_SRC_BKUP 2
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

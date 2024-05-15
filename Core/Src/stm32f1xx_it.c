@@ -121,8 +121,6 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   LCD_DisplayString(100, 100, "Hard fault");
-  int dummy = uxTaskGetStackHighWaterMark(NULL);
-	LCD_DisplayNumber(100, 200, dummy, 8);
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -309,7 +307,6 @@ void USART1_IRQHandler(void)
     uart1_rx_data_len = tmp_len;
     uart1_rx_flag = 1;
     uart1_rx_data[uart1_rx_data_len] = '\0';
-    uint8_t buff[255] = {0};
     printf(">> UART1 Received: \r\n%s\r\n", uart1_rx_data);
     // Allow users to transmit AT instructions to ESP8266 through UART1
     osMessageQueuePut(esp_tx_queueHandle, uart1_rx_data, 0, 0);
@@ -338,12 +335,13 @@ void USART2_IRQHandler(void)
     uart2_rx_data[uart2_rx_data_len] = '\0';
     uart2_rx_flag = 1;
 		// if (!os_running)
-    if(1)
-    {
-      printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
-    }
+    //if(1)
+    //{
+    //  printf(">> ESP Sent: \r\n%s\r\n", uart2_rx_data);
+    //}
     if (os_running)
     {
+      if (strstr(uart2_rx_data, "busy p...") == NULL)
       osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     }
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);

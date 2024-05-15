@@ -1,19 +1,13 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+ * @file main.c
+ * @author Tiantian Zhong (giant@zju.edu.cn)
+ * @brief The main program.
+ * @date 2024-05-11
  *
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
+ * @copyright Copyright (c) 2024 Tiantian Zhong @ Zhejiang University
+ *            This file is part of ZJUI ECE 445 Spring 2024 Project 19.
  *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -22,16 +16,15 @@
 #include "adc.h"
 #include "dma.h"
 #include "spi.h"
-#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "printf.h"
-#include "lcd.h"
-#include "spi.h"
 #include "esp.h"
+#include "lcd.h"
+#include "printf.h"
+#include "spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,15 +45,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t uart1_rx_data[255]; // UART1 DMA buffer
-uint8_t uart1_rx_data_len; // length of message received from UART1 in DMA buffer
-volatile uint8_t uart1_rx_flag;  // Flag to indicate that UART1 DMA has received data
+uint8_t uart1_rx_data[255];     // UART1 DMA buffer
+uint8_t uart1_rx_data_len;      // length of message received from UART1 in DMA buffer
+volatile uint8_t uart1_rx_flag; // Flag to indicate that UART1 DMA has received data
 
-uint8_t uart2_rx_data[255]; // UART2 DMA buffer
-uint8_t uart2_rx_data_len; // length of message received from UART2 in DMA buffer
-volatile uint8_t uart2_rx_flag;  // Flag to indicate that UART2 DMA has received data
+uint8_t uart2_rx_data[255];     // UART2 DMA buffer
+uint8_t uart2_rx_data_len;      // length of message received from UART2 in DMA buffer
+volatile uint8_t uart2_rx_flag; // Flag to indicate that UART2 DMA has received data
 
-uint32_t adc1_data[6]; // ADC1 DMA buffer
+uint32_t adc1_data[6];                                       // ADC1 DMA buffer
+float adc_current_base_mmc = 0., adc_current_base_bkup = 0.; // ADC current base values
 
 volatile uint8_t os_running = 0; // Indicating if FreeRTOS has started
 
@@ -112,30 +106,39 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_SPI1_Init();
-  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  // LCD initialization
-  SPI_LCD_Init ();
-  LCD_UI_Init();
+    // LCD initialization
+    SPI_LCD_Init();
+    LCD_UI_Init();
 
-  // Make sure power supply is off
-  HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+    // Make sure power supply is off
+    HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
 
-  __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-  __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
-	HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
-	HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
+    // Start UART
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+    HAL_UART_Receive_DMA(&huart1, uart1_rx_data, 255);
+    HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
 
-  // Network initialization
-  // esp_init();
+    // Start ADC
+    HAL_ADCEx_Calibration_Start(&hadc1);
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
+    HAL_Delay(1000);
 
-  // Start PWM generator
-	// NOTE: PWM generator should not be started until it connects the wireless controller
-	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    // ADC current channels calibration
+    volatile uint32_t tmp[2] = {0};
+    for (uint8_t i = 0; i < 20; i++)
+    {
+        tmp[0] += adc1_data[3];
+        tmp[1] += adc1_data[4];
+        HAL_Delay(10);
+    }
+    tmp[0] /= 20;
+    tmp[1] /= 20;
+    adc_current_base_mmc = (float)tmp[0] / ADC_COEFFICIENT;
+    adc_current_base_bkup = (float)tmp[1] / ADC_COEFFICIENT;
 
-  HAL_ADCEx_Calibration_Start(&hadc1);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_data, 6);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -151,10 +154,10 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-		{
-			// we should never get here
-		}
+    while (1)
+    {
+        // we should never get here
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -240,10 +243,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state
-   */
-  __disable_irq ();
-  while (1)
+    /* User can add his own implementation to report the HAL error return state
+     */
+    __disable_irq();
+    while (1)
     {
     }
   /* USER CODE END Error_Handler_Debug */
@@ -260,9 +263,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
+    /* User can add his own implementation to report the file name and line
+       number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+       line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

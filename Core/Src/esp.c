@@ -5,8 +5,8 @@
  * @version 1.0
  * @date 2024-05-10
  *
- * @copyright Copyright (c) 2024 This file is part of ZJUI ECE 445 Spring 2024
- * Project 19.
+ * @copyright Copyright (c) 2024 Tiantian Zhong @ Zhejiang University
+ *            This file is part of ZJUI ECE 445 Spring 2024 Project 19.
  *
  */
 
@@ -16,6 +16,7 @@
 #include "lcd.h"
 
 // string
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,43 +29,26 @@
 // Network info
 #include "srv_info_private.h"
 
-uint8_t esp_response[255] = {0};
+uint8_t esp_response[256] = {0};
 
-// mqtt client info
-#define MQTT_CLIENT_ID "WindPwr"
-#define MQTT_KEEPALIVE 60
-
-// mqtt QoS
-#define MQTT_QOS0 0
-#define MQTT_QOS1 1
-#define MQTT_QOS2 2
-
-// mqtt topic
-#define MQTT_TOPIC_STATUS "system/status"
-#define MQTT_TOPIC_WARN "system/warning"
-#define MQTT_TOPIC_USR_CMD "usr/cmd"
-
-// mqtt lwt msg
-#define MQTT_LWT_MSG "-1"
-
-extern uint8_t uart2_rx_data[255]; // UART2 DMA buffer
+extern uint8_t uart2_rx_data[256]; // UART2 DMA buffer
 extern uint8_t uart2_rx_flag;      // Flag to indicate that UART2 DMA has received data
-uint8_t mqtt_recv_topic[255];      // MQTT received topic
-uint8_t mqtt_recv_msg[255];        // MQTT received message
 
 extern uint32_t adc1_data[6]; // ADC data
 
 // Message queues
-extern osMessageQueueId_t esp_rx_queueHandle;     // ESP message queue
-extern osMessageQueueId_t esp_tx_queueHandle;     // MQTT message queue
-extern osMessageQueueId_t usr_cmd_queueHandle;    // User command queue
-extern osMessageQueueId_t report_pwr_queueHandle; // Power report queue
+extern osMessageQueueId_t esp_rx_queueHandle;      // ESP message queue
+extern osMessageQueueId_t esp_tx_queueHandle;      // MQTT message queue
+extern osMessageQueueId_t usr_cmd_queueHandle;     // User command queue
+extern osMessageQueueId_t report_pwr_queueHandle;  // Power report queue
+extern osMessageQueueId_t mqtt_rx_msg_queueHandle; // MQTT received message queue
 
 // Tasks
 extern osThreadId_t esp_msg_tskHandle; // ESP message task
 
 // Events
 extern osEventFlagsId_t sys_statHandle;
+extern osEventFlagsId_t state_machineHandle;
 
 // mutexes
 extern osMutexId_t adc_mutexHandle;
@@ -79,14 +63,14 @@ extern osSemaphoreId_t report_pwr_semphrHandle;
  */
 void esp_init_os(void)
 {
-    uint8_t cmd[255] = {0};
-    uint8_t esp_response_buff[255] = {0}; // ESP response buffer (privately
+    uint8_t cmd[256] = {0};
+    uint8_t esp_response_buff[256] = {0}; // ESP response buffer (privately
                                           // used in this function)
     // Perform reset
     osDelay(1000);
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
-    osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT | MQTT_CONN_STAT);
+    osEventFlagsClear(sys_statHandle, EVENT_WIFI_CONN_STAT | EVENT_MQTT_CONN_STAT);
 
     // Set UI
     osMutexAcquire(lcd_mutexHandle, osWaitForever);
@@ -197,7 +181,8 @@ void esp_init_os(void)
 
     // MQTT connection config
     // AT+MQTTCONNCFG=<LinkID>,<keepalive>,<disable_clean_session>,<"lwt_topic">,<"lwt_msg">,<lwt_qos>,<lwt_retain>
-    sprintf(cmd, "AT+MQTTCONNCFG=0,15,1,\"%s\",\"%s\",%d,1\r\n", MQTT_TOPIC_WARN, MQTT_LWT_MSG, MQTT_QOS2);
+    sprintf(cmd, "AT+MQTTCONNCFG=0,%d,1,\"%s\",\"%d\",%d,1\r\n", MQTT_KEEPALIVE, MQTT_TOPIC_WARN, MQTT_LWT_MSG,
+            MQTT_QOS2);
     HAL_UART_Transmit_DMA(&huart2, cmd, strlen(cmd));
     if (osMessageQueueGet(esp_rx_queueHandle, esp_response_buff, NULL, 2000) == osOK)
     {
@@ -250,7 +235,7 @@ void esp_init_os(void)
             LCD_DisplayString(LCD_WIFI_STAT_X, LCD_WIFI_STAT_Y, WIFI_SSID);
             osMutexRelease(lcd_mutexHandle);
             HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
-            osEventFlagsSet(sys_statHandle, WIFI_CONN_STAT);
+            osEventFlagsSet(sys_statHandle, EVENT_WIFI_CONN_STAT);
         }
         else
         {
@@ -302,7 +287,7 @@ void esp_init_os(void)
             LCD_SetBackColor(LCD_WHITE);
             LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Error");
+            LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN ERR");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -314,7 +299,7 @@ void esp_init_os(void)
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, LCD_Width - LCD_MQTT_BRKR_X, 16);
-        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "MQTT Timeout");
+        LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, "CONN Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
@@ -332,7 +317,7 @@ void esp_init_os(void)
             LCD_SetBackColor(LCD_WHITE);
             LCD_SetColor(LCD_BLACK);
             LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
-            LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Error");
+            LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "SUBSCR ERR");
             osMutexRelease(lcd_mutexHandle);
             return;
         }
@@ -344,14 +329,23 @@ void esp_init_os(void)
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetColor(LCD_BLACK);
         LCD_ClearRect(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, LCD_Width - LCD_MQTT_CLNT_X, 16);
-        LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "Subscr. Timeout");
+        LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, "SUBSCR Timeout");
         osMutexRelease(lcd_mutexHandle);
         return;
     }
-    osEventFlagsSet(sys_statHandle, MQTT_CONN_STAT);
+
+    osMessageQueueReset(esp_tx_queueHandle); // empty the message queue
+
+    // send system online msg
+    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
+    osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
+    osEventFlagsSet(sys_statHandle, EVENT_MQTT_CONN_STAT);
 }
 
-// FreeRTOS tasks
+/*
+ * -------------------- FreeRTOS Tasks --------------------
+ */
+
 /**
  * @brief ESP response analysis.
  *
@@ -363,8 +357,10 @@ void esp_msg_tsk(void *argument)
     for (;;)
     {
         osDelay(50);
-        uint8_t buff[255] = {0};
-        uint8_t dummy; // dummy variable to store the message length
+        uint8_t buff[256] = {0};
+        uint8_t dummy;              // dummy variable to store the message length
+        uint8_t mqtt_rx_topic[256]; // MQTT received topic
+        uint8_t mqtt_rx_msg[256];   // MQTT received message
         // Send Message
         if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
         {
@@ -377,9 +373,9 @@ void esp_msg_tsk(void *argument)
         {
             // Case a: WIFI Disconnected
             // In this case, set system event flag
-            if (strstr((char *)buff, "WIFI DISCONNECT")!= NULL)
+            if (strstr((char *)buff, "WIFI DISCONNECT") != NULL)
             {
-                osEventFlagsClear(sys_statHandle, WIFI_CONN_STAT);
+                osEventFlagsClear(sys_statHandle, EVENT_WIFI_CONN_STAT);
                 HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
 
                 // display on LCD
@@ -393,9 +389,9 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case b: MQTT Disconnected
-            if (strstr((char *)buff, "MQTTDISCONNECTED")!= NULL)
+            if (strstr((char *)buff, "ECTED:0") != NULL)
             {
-                osEventFlagsClear(sys_statHandle, MQTT_CONN_STAT);
+                osEventFlagsClear(sys_statHandle, EVENT_MQTT_CONN_STAT);
                 HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_RESET);
 
                 // display on LCD
@@ -409,9 +405,9 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case c: WIFI reconnected
-            if (strstr((char *)buff, "WIFI GOT IP")!= NULL)
+            if (strstr((char *)buff, "WIFI GOT IP") != NULL)
             {
-                osEventFlagsSet(sys_statHandle, WIFI_CONN_STAT);
+                osEventFlagsSet(sys_statHandle, EVENT_WIFI_CONN_STAT);
                 HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_SET);
 
                 // display on LCD
@@ -425,9 +421,9 @@ void esp_msg_tsk(void *argument)
             }
 
             // Case d: MQTT reconnected
-            if (strstr((char *)buff, "MQTTCONNECTED")!= NULL)
+            if (strstr((char *)buff, "MQTTCONNECTED") != NULL)
             {
-                osEventFlagsSet(sys_statHandle, MQTT_CONN_STAT);
+                osEventFlagsSet(sys_statHandle, EVENT_MQTT_CONN_STAT);
                 HAL_GPIO_WritePin(MQTTSRV_STAT_GPIO_Port, MQTTSRV_STAT_Pin, GPIO_PIN_SET);
 
                 // display on LCD
@@ -439,6 +435,12 @@ void esp_msg_tsk(void *argument)
                 LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
                 LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
                 osMutexRelease(lcd_mutexHandle);
+            }
+
+            // Case e: Received MQTT msg
+            if (strstr((char *)buff, "+MQTTSUBRECV:0") != NULL)
+            {
+                osMessageQueuePut(mqtt_rx_msg_queueHandle, buff, 0, osWaitForever);
             }
         }
     }
@@ -455,7 +457,7 @@ void tmr_report_pwr_clbk(void *argument)
     // For adc data calculating
     uint16_t vmmc, vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout;
     uint32_t adc_to_send[6];
-    uint8_t buff[255] = {0};
+    uint8_t buff[256] = {0};
     uint32_t sys_event = 0;
     uint8_t pwr_src = 0; // 0: off, 1: MMC, 2: backup
     sysPwrData_t pwrData_buff;
@@ -472,15 +474,12 @@ void tmr_report_pwr_clbk(void *argument)
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 5, 2);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 5, 2);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 5, 2);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 5, 2);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 5, 2);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 5, 2);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_OUT_Y, pwrData_buff.out.voltage, 5, 2);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_OUT_Y, pwrData_buff.out.current, 5, 2);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_OUT_Y, pwrData_buff.out.power, 6, 2);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 3, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 3, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 3, 1);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 3, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 3, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 3, 1);
         osMutexRelease(lcd_mutexHandle);
     }
 
@@ -488,40 +487,90 @@ void tmr_report_pwr_clbk(void *argument)
     sys_event = osEventFlagsGet(sys_statHandle);
 
     // get MQTT connection status; if not connected then return
-    if ((sys_event & MQTT_CONN_STAT) == 0 || (sys_event & WIFI_CONN_STAT) == 0)
+    if ((sys_event & EVENT_MQTT_CONN_STAT) == 0 || (sys_event & EVENT_WIFI_CONN_STAT) == 0)
     {
         return;
     }
-
-    if (sys_event & MMC_EN)
-    {
-        pwr_src = 1;
-    }
-    else if (sys_event & BKUP_EN)
-    {
-        pwr_src = 2;
-    }
-    else
-    {
-        pwr_src = 0;
-    }
-
+    
     // Send data to ESP8266
     vmmc = voltage_current_format(pwrData_buff.mmc.voltage);
     vbackup = voltage_current_format(pwrData_buff.bkup.voltage);
-    vout = voltage_current_format(pwrData_buff.out.voltage);
     immc = voltage_current_format(pwrData_buff.mmc.current);
     ibackup = voltage_current_format(pwrData_buff.bkup.current);
-    iout = voltage_current_format(pwrData_buff.out.current);
     pmmc = power_format(pwrData_buff.mmc.power);
     pbackup = power_format(pwrData_buff.bkup.power);
-    pout = power_format(pwrData_buff.out.power);
+    pwr_src = pwrData_buff.pwr_src;
 
-    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0 %d %d %d %d %d %d %d %d %d %d\",2,0\r\n", (char *)MQTT_TOPIC_STATUS, vmmc,
-            vbackup, vout, immc, ibackup, iout, pmmc, pbackup, pout, pwr_src);
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"0 %d %d %d %d %d %d %d\",2,0\r\n", (char *)MQTT_TOPIC_STATUS, vmmc, vbackup,
+            immc, ibackup, pmmc, pbackup, pwr_src);
 
     osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
+
+    // send state machine flags
+    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,0\r\n", "dev/state", osEventFlagsGet(state_machineHandle));
+    osMessageQueuePut(esp_tx_queueHandle, buff, 0, 0);
 }
+
+/**
+ * @brief Extract user response from MQTT message.
+ *
+ * @param argument
+ */
+void mqtt_msg_tsk(void *argument)
+{
+    uint8_t buff[255] = {0};
+    uint8_t buff_msg[60] = {0};
+    uint8_t buff_topic[20] = {0};
+    user_cmd_t usr_cmd;
+    for (;;)
+    {
+        // reset usr_cmd
+        usr_cmd.mode = 0;
+        usr_cmd.voltage_backup_cut_in = 0;
+        usr_cmd.voltage_backup_cut_out = 0;
+        usr_cmd.current = 0;
+
+        // get message from ESP8266
+        osMessageQueueGet(mqtt_rx_msg_queueHandle, buff, NULL, osWaitForever);
+
+        // check if the message is a valid mqtt message
+        if (sscanf((char *)buff, "+MQTTSUBRECV:0,\"%[^\"]\",%*d,%[^\r]", &buff_topic, &buff_msg) != NULL)
+        {
+            if (strcmp((uint8_t *)buff_topic, (uint8_t *)MQTT_TOPIC_USR_CMD) == 0)
+            {
+                usr_cmd.mode = buff_msg[0] - '0';
+                if (buff_msg[0] == CMD_PWR_OFF) // force power off
+                {
+                    // transmit parameters to power monitor task
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                }
+                if (buff_msg[0] == CMD_SMART_PWR_ROUTING) // smart power routing
+                {
+                    // transmit parameters to power monitor task
+                    sscanf(buff_msg, "1 %d %d %d", &usr_cmd.voltage_backup_cut_in, &usr_cmd.voltage_backup_cut_out,
+                           &usr_cmd.current);
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                }
+                if (buff_msg[0] == CMD_PWR_FORCE_PRIMARY) // force primary
+                {
+                    sscanf(buff_msg, "2 %d", &usr_cmd.current);
+                    // transmit parameters to power monitor task
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                }
+                if (buff_msg[0] == CMD_PWR_FORCE_BACKUP) // force backup
+                {
+                    sscanf(buff_msg, "3 %d", &usr_cmd.current);
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                }
+            }
+            osDelay(10);
+        }
+    }
+}
+
+/**
+ ** ---------------------- Utility functions -------------------------
+ */
 
 /**
  * @brief Format voltage and current data to 2 decimal places (12.34V-->1234)
@@ -531,7 +580,7 @@ void tmr_report_pwr_clbk(void *argument)
  */
 uint16_t voltage_current_format(float f)
 {
-    return (uint16_t)(f * 100) % 1000;
+    return (uint16_t)(f * 100) % 10000;
 }
 
 /**
