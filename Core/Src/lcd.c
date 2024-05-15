@@ -18,7 +18,10 @@
  */
 
 #include "lcd.h"
+#include "cmsis_os.h"
 #include "printf.h"
+#include "semphr.h"
+#include "task.h"
 
 #define LCD_SPI hspi1         // Define the SPI handler for LCD
 static pFONT *LCD_AsciiFonts; // Define the ASCII font
@@ -1293,3 +1296,148 @@ void LCD_UI_Init()
     LCD_DisplayString(LCD_SYS_STAT_IDLE_X, LCD_SYS_STAT_IDLE_Y, "IDLE");
 }
 
+/*
+ * ------------------------- FreeRTOS LCD Helper Functions ------------------------ */
+
+extern osMutexId_t lcd_mutexHandle;
+
+void lcd_show_overload()
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_RED);
+        LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_WHITE);
+        LCD_SetBackColor(LCD_RED);
+        LCD_SetTextFont(&ASCII_Font20);
+        LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_normal()
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_BLUE);
+        LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_WHITE);
+        LCD_SetBackColor(LCD_BLUE);
+        LCD_SetTextFont(&ASCII_Font20);
+        LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "WIND PWR");
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_eb()
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_ClearRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_RED);
+        LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_WHITE);
+        LCD_SetBackColor(LCD_RED);
+        LCD_SetAsciiFont(&ASCII_Font20);
+        LCD_DisplayString(LCD_SYS_STAT_EMERGENCY_STOP_X, LCD_SYS_STAT_EMERGENCY_STOP_Y, "EMERGENCY");
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_backup()
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_YELLOW);
+        LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_YELLOW);
+        LCD_SetTextFont(&ASCII_Font20);
+        LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_idle()
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_GREEN);
+        LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_GREEN);
+        LCD_SetAsciiFont(&ASCII_Font20);
+        LCD_DisplayString(LCD_SYS_STAT_IDLE_X, LCD_SYS_STAT_IDLE_Y, "IDLE");
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit)
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_DisplayString(10, 240, "BACKUP CUT-IN:");
+        LCD_DisplayString(10, 260, "BACKUP CUT-OUT:");
+        LCD_DisplayString(10, 280, "MAX CURRENT:");
+        LCD_DisplayString(161, 240, "V");
+        LCD_DisplayString(171, 260, "V");
+        LCD_DisplayString(151, 280, "A");
+        LCD_ClearRect(131, 240, 30, 16);
+        LCD_ClearRect(141, 260, 30, 16);
+        LCD_ClearRect(121, 280, 30, 16);
+        LCD_DisplayNumber(131, 240, v_cutin, 1);
+        LCD_DisplayNumber(141, 260, v_cutout, 1);
+        LCD_DisplayNumber(121, 280, i_limit, 1);
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_states(uint8_t state)
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        taskENTER_CRITICAL();
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_DisplayString(10, 220, "MODE:");
+        switch (state)
+        {
+        case 0: {
+            LCD_DisplayString(60, 220, "OUTPUT OFF         ");
+            break;
+        }
+        case 1: {
+            LCD_DisplayString(60, 220, "SMART POWER ROUTING");
+            break;
+        }
+        case 2: {
+            LCD_DisplayString(60, 220, "FORCE MMC          ");
+            break;
+        }
+        case 3: {
+            LCD_DisplayString(60, 220, "FORCE BACKUP       ");
+            break;
+        }
+        default:
+            break;
+        }
+        taskEXIT_CRITICAL();
+        osMutexRelease(lcd_mutexHandle);
+    }
+}

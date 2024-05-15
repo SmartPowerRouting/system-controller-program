@@ -118,6 +118,15 @@ void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height, cons
 //>>>>>	Display System UI
 void LCD_UI_Init();
 
+// lcd helper functions for rtos
+void lcd_show_idle();
+void lcd_show_normal();
+void lcd_show_overload();
+void lcd_show_eb();
+void lcd_show_backup();
+void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit);
+void lcd_show_states(uint8_t state);
+
 /* Pins Macros */
 #define LCD_SCK_PIN GPIO_PIN_3
 #define LCD_SCK_PORT GPIOB
