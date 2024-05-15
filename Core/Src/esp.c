@@ -335,7 +335,7 @@ void esp_init_os(void)
     }
 
     // send system online msg
-    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
+    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
     osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
     osEventFlagsSet(sys_statHandle, EVENT_MQTT_CONN_STAT);
 }
@@ -472,12 +472,12 @@ void tmr_report_pwr_clbk(void *argument)
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 5, 2);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 5, 2);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 5, 2);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 5, 2);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 5, 2);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 5, 2);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 5, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 5, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 5, 1);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 5, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 5, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 5, 1);
         osMutexRelease(lcd_mutexHandle);
     }
 
@@ -540,16 +540,15 @@ void mqtt_msg_tsk(void *argument)
             {
                 if (buff_msg[0] == CMD_PWR_OFF) // force power off
                 {
-                    HAL_UART_Transmit(&huart1, "Force power off\r\n", strlen("Force power off\r\n"), 1000);
                     // set state machine
                     osEventFlagsClear(state_machineHandle, 0xFFFFFFU);
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
                     sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,0\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK);
                     lcd_show_idle();
+                    lcd_show_states(0);
                 }
                 if (buff_msg[0] == CMD_SMART_PWR_ROUTING) // smart power routing
                 {
-                    HAL_UART_Transmit(&huart1, "Smart power routing\r\n", strlen("Smart power routing\r\n"), 1000);
                     // set state machine
                     osEventFlagsClear(state_machineHandle, 0xFFFFFFU);
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_PWR_ROUTING);
@@ -568,26 +567,39 @@ void mqtt_msg_tsk(void *argument)
                                 MQTT_QOS2);
                         osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
                     }
+                    lcd_show_states(1);
                     // lcd_show_normal();
                 }
                 if (buff_msg[0] == CMD_PWR_FORCE_PRIMARY) // force primary
                 {
-                    HAL_UART_Transmit(&huart1, "Force MMC", strlen("Force MMC"), 1000);
+                    usr_cmd.voltage_backup_cut_in = 0;
+                    usr_cmd.voltage_backup_cut_out = 0;
+                    sscanf(buff_msg, "2 %d", &usr_cmd.current);
+                    //printf("> %d\r\n", usr_cmd.current);
                     // set state machine
                     osEventFlagsClear(state_machineHandle, 0xFFFFFFU);
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_PWR_FORCE_PRIMARY);
-                    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,0\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK);
-                    // lcd_show_normal();
+                    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK);
+                    osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                    lcd_show_normal();
+                    lcd_show_states(2);
                 }
                 if (buff_msg[0] == CMD_PWR_FORCE_BACKUP) // force backup
                 {
-                    HAL_UART_Transmit(&huart1, "Force backup", strlen("Force backup"), 1000);
+                    usr_cmd.voltage_backup_cut_in = 0;
+                    usr_cmd.voltage_backup_cut_out = 0;
+                    sscanf(buff_msg, "3 %d", &usr_cmd.current);
+                    //printf("> %d\r\n", usr_cmd.current);
                     // set state machine
                     osEventFlagsClear(state_machineHandle, 0xFFFFFFU);
                     osEventFlagsSet(state_machineHandle, STATE_MACHINE_PWR_FORCE_BACKUP);
-                    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,%d\r\n", MQTT_TOPIC_RESPONSE, RESP_CMD_OK, MQTT_QOS2,
-                            1); // set to retain
-                    // lcd_show_normal();
+                    sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_RESPONSE,
+                            RESP_CMD_OK); // set to retain
+                    osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+                    osMessageQueuePut(usr_cmd_queueHandle, &usr_cmd, 0, 500);
+                    lcd_show_backup();
+                    lcd_show_states(3);
                 }
             }
             osDelay(10);
@@ -644,7 +656,7 @@ void lcd_show_normal()
         LCD_SetColor(LCD_WHITE);
         LCD_SetBackColor(LCD_BLUE);
         LCD_SetTextFont(&ASCII_Font20);
-        LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "NORMAL");
+        LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "WIND PWR");
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -670,9 +682,9 @@ void lcd_show_backup()
     {
         LCD_SetColor(LCD_YELLOW);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
-        LCD_SetTextFont(&ASCII_Font20);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_YELLOW);
+        LCD_SetTextFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
         osMutexRelease(lcd_mutexHandle);
     }
@@ -699,9 +711,51 @@ void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit)
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetAsciiFont(&ASCII_Font16);
-        LCD_DisplayNumber(0, 260, v_cutin, 5);
-        LCD_DisplayNumber(0, 280, v_cutout, 5);
-        LCD_DisplayNumber(0, 300, i_limit, 5);
+        LCD_DisplayString(10, 240, "BACKUP CUT-IN:");
+        LCD_DisplayString(10, 260, "BACKUP CUT-OUT:");
+        LCD_DisplayString(10, 280, "MAX CURRENT:");
+        LCD_DisplayString(161, 240, "V");
+        LCD_DisplayString(171, 260, "V");
+        LCD_DisplayString(151, 280, "A");
+        LCD_ClearRect(131, 240, 30, 16);
+        LCD_ClearRect(141, 260, 30, 16);
+        LCD_ClearRect(121, 280, 30, 16);
+        LCD_DisplayNumber(131, 240, v_cutin, 1);
+        LCD_DisplayNumber(141, 260, v_cutout, 1);
+        LCD_DisplayNumber(121, 280, i_limit, 1);
+        osMutexRelease(lcd_mutexHandle);
+    }
+}
+
+void lcd_show_states(uint8_t state)
+{
+    if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
+    {
+        LCD_SetColor(LCD_BLACK);
+        LCD_SetBackColor(LCD_WHITE);
+        LCD_SetAsciiFont(&ASCII_Font16);
+        LCD_DisplayString(10, 220, "MODE:");
+        switch (state)
+        {
+        case 0: {
+            LCD_DisplayString(60, 220, "OUTPUT OFF         ");
+            break;
+        }
+        case 1: {
+            LCD_DisplayString(60, 220, "SMART POWER ROUTING");
+            break;
+        }
+        case 2: {
+            LCD_DisplayString(60, 220, "FORCE MMC          ");
+            break;
+        }
+        case 3: {
+            LCD_DisplayString(60, 220, "FORCE BACKUP       ");
+            break;
+        }
+        default:
+            break;
+        }
         osMutexRelease(lcd_mutexHandle);
     }
 }

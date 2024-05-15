@@ -1269,15 +1269,15 @@ void LCD_UI_Init()
     LCD_Clear();
 
     LCD_DisplayString(50, 92, "WIND TURBINE");
-    LCD_DisplayString(45, 164, "SECONDARY SRC");
+    LCD_DisplayString(40, 164, "SECONDARY SRC");
 
     LCD_SetAsciiFont(&ASCII_Font20);
     LCD_DisplayChar(60, LCD_MMC_Y, 'V');
     LCD_DisplayChar(60, LCD_BKUP_Y, 'V');
     LCD_DisplayChar(140, LCD_MMC_Y, 'A');
     LCD_DisplayChar(140, LCD_BKUP_Y, 'A');
-    LCD_DisplayChar(230, LCD_MMC_Y, 'W');
-    LCD_DisplayChar(230, LCD_BKUP_Y, 'W');
+    LCD_DisplayChar(220, LCD_MMC_Y, 'W');
+    LCD_DisplayChar(220, LCD_BKUP_Y, 'W');
 
     LCD_SetAsciiFont(&ASCII_Font16);
     LCD_DisplayString(16, LCD_WIFI_STAT_Y, "WIFI: ");
