@@ -165,9 +165,9 @@ void lcd_show_states(uint8_t state);
 #define LCD_MQTT_CLNT_X 145
 #define LCD_MQTT_CLNT_Y 32
 
-#define LCD_VOTAGE_X 6
-#define LCD_CURRENT_X 86
-#define LCD_POWER_X 166
+#define LCD_VOTAGE_X 16
+#define LCD_CURRENT_X 96
+#define LCD_POWER_X 176
 #define LCD_MMC_Y 120
 #define LCD_BKUP_Y 192
 #define LCD_OUT_Y 264

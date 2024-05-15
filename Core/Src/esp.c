@@ -474,12 +474,12 @@ void tmr_report_pwr_clbk(void *argument)
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 5, 1);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 5, 1);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 5, 1);
-        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 5, 1);
-        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 5, 1);
-        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 5, 1);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 3, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 3, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 3, 1);
+        LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_BKUP_Y, pwrData_buff.bkup.voltage, 3, 1);
+        LCD_DisplayDecimals(LCD_CURRENT_X, LCD_BKUP_Y, pwrData_buff.bkup.current, 3, 1);
+        LCD_DisplayDecimals(LCD_POWER_X, LCD_BKUP_Y, pwrData_buff.bkup.power, 3, 1);
         osMutexRelease(lcd_mutexHandle);
     }
 

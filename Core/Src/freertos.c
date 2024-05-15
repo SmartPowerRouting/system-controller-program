@@ -317,6 +317,7 @@ void pwr_monitor_tsk(void *argument)
                 default:
                     break;
                 }
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
             }
             osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 0, 500);
             lcd_show_limits(voltage_backup_cut_in, voltage_backup_cut_out, current_limit);
@@ -352,7 +353,7 @@ void pwr_monitor_tsk(void *argument)
         sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
 
         //  overload protection
-        if (sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit)
+        if ((sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit) && sys_state != OVERLOAD_STATE)
         {
             sys_state = OVERLOAD_STATE;
             osEventFlagsSet(sys_statHandle, EVENT_OVERLOAD);

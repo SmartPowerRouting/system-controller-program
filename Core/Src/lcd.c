@@ -1272,7 +1272,7 @@ void LCD_UI_Init()
     LCD_Clear();
 
     LCD_DisplayString(50, 92, "WIND TURBINE");
-    LCD_DisplayString(40, 164, "SECONDARY SRC");
+    LCD_DisplayString(LCD_Width / 2 - 55, 164, "BACKUP SRC");
 
     LCD_SetAsciiFont(&ASCII_Font20);
     LCD_DisplayChar(60, LCD_MMC_Y, 'V');
@@ -1310,7 +1310,7 @@ void lcd_show_overload()
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_WHITE);
         LCD_SetBackColor(LCD_RED);
-        LCD_SetTextFont(&ASCII_Font20);
+        LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
         taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
@@ -1326,7 +1326,7 @@ void lcd_show_normal()
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_WHITE);
         LCD_SetBackColor(LCD_BLUE);
-        LCD_SetTextFont(&ASCII_Font20);
+        LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "WIND PWR");
         taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
@@ -1359,7 +1359,7 @@ void lcd_show_backup()
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_YELLOW);
-        LCD_SetTextFont(&ASCII_Font20);
+        LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
         taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
@@ -1427,7 +1427,7 @@ void lcd_show_states(uint8_t state)
             break;
         }
         case 2: {
-            LCD_DisplayString(60, 220, "FORCE MMC          ");
+            LCD_DisplayString(60, 220, "FORCE WIND POWER   ");
             break;
         }
         case 3: {
