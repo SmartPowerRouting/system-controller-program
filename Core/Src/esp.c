@@ -338,7 +338,7 @@ void esp_init_os(void)
 
     // send system online msg
     sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
-    osMessageQueuePut(esp_tx_queueHandle, cmd, 0, 0);
+    osMessageQueuePut(esp_tx_queueHandle, cmd, 1, 0);
     osEventFlagsSet(sys_statHandle, EVENT_MQTT_CONN_STAT);
 }
 
@@ -361,11 +361,13 @@ void esp_msg_tsk(void *argument)
         uint8_t dummy;              // dummy variable to store the message length
         uint8_t mqtt_rx_topic[256]; // MQTT received topic
         uint8_t mqtt_rx_msg[256];   // MQTT received message
+        uint32_t sys_event = 0;
+
         // Send Message
         if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
         {
             HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
-            osDelay(200);
+            osDelay(300);
         }
 
         // Receive message
@@ -435,6 +437,7 @@ void esp_msg_tsk(void *argument)
                 LCD_DisplayString(LCD_MQTT_BRKR_X, LCD_MQTT_BRKR_Y, MQTT_BROKER);
                 LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
                 osMutexRelease(lcd_mutexHandle);
+                osMessageQueueReset(esp_tx_queueHandle); // empty the message queue
             }
 
             // Case e: Received MQTT msg
@@ -491,7 +494,7 @@ void tmr_report_pwr_clbk(void *argument)
     {
         return;
     }
-    
+
     // Send data to ESP8266
     vmmc = voltage_current_format(pwrData_buff.mmc.voltage);
     vbackup = voltage_current_format(pwrData_buff.bkup.voltage);

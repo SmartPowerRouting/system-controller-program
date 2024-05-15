@@ -271,8 +271,6 @@ void pwr_monitor_tsk(void *argument)
     /* Infinite loop */
     for (;;)
     {
-        // report power info to lcd and esp8266 (every one second)
-        xQueueOverwrite(report_pwr_queueHandle, &sys_pwr);
         // update smart power routing voltage parameters and overload current limit parameter
         if (osMessageQueueGet(usr_cmd_queueHandle, &user_cmd, NULL, 0) == osOK)
         {
@@ -288,38 +286,43 @@ void pwr_monitor_tsk(void *argument)
             {
                 current_limit = user_cmd.current / 100;
             }
+
+            // apply user command specified mode to the system
             if (sys_state != EB_STATE)
             {
-                printf("User command received\r\n");
+              // printf("User command received\r\n");
                 state_change = 1;
                 switch (user_cmd.mode)
                 {
                 case (CMD_PWR_OFF - '0'):
-                    printf("CMD_PWR_OFF\r\n");
+                  // printf("CMD_PWR_OFF\r\n");
                     sys_state = IDLE_STATE;
                     lcd_show_states(0);
                     break;
                 case (CMD_SMART_PWR_ROUTING - '0'):
-                    printf("CMD_SMART_PWR_ROUTING\r\n");
+                  // printf("CMD_SMART_PWR_ROUTING\r\n");
                     sys_state = PWR_ROUTING_STATE;
                     lcd_show_states(1);
                     break;
                 case (CMD_PWR_FORCE_PRIMARY - '0'):
-                    printf("CMD_PWR_FORCE_PRIMARY\r\n");
+                  // printf("CMD_PWR_FORCE_PRIMARY\r\n");
                     sys_state = PWR_FORCE_PRIMARY_STATE;
                     lcd_show_states(2);
                     break;
                 case (CMD_PWR_FORCE_BACKUP - '0'):
-                    printf("CMD_PWR_FORCE_BACKUP\r\n");
+                  // printf("CMD_PWR_FORCE_BACKUP\r\n");
                     sys_state = PWR_FORCE_BACKUP_STATE;
                     lcd_show_states(3);
                     break;
                 default:
                     break;
                 }
+
+                // set event flags
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
             }
-            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 0, 500);
+            // send response back to user
+            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 1, 500);
             lcd_show_limits(voltage_backup_cut_in, voltage_backup_cut_out, current_limit);
         }
 
@@ -353,10 +356,10 @@ void pwr_monitor_tsk(void *argument)
         sys_pwr.bkup.power = sys_pwr.bkup.voltage * sys_pwr.bkup.current;
 
         //  overload protection
-        if ((sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit) && sys_state != OVERLOAD_STATE)
+        if ((sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit) &&
+            sys_state != OVERLOAD_STATE)
         {
             sys_state = OVERLOAD_STATE;
-            osEventFlagsSet(sys_statHandle, EVENT_OVERLOAD);
             state_change = 1;
             osDelay(50);
         }
@@ -365,33 +368,31 @@ void pwr_monitor_tsk(void *argument)
         if (eb_scan() && sys_state != EB_STATE) // EB pressed
         {
             sys_state = EB_STATE;
-            osEventFlagsSet(sys_statHandle, EVENT_EB);
             state_change = 1;
             osDelay(50);
         }
-        if (!eb_scan() && sys_state == EB_STATE)
+        if (!eb_scan() && sys_state == EB_STATE) // EB released
         {
             sys_state = IDLE_STATE;
-            osEventFlagsSet(sys_statHandle, EVENT_PWR_OFF);
             state_change = 1;
             osDelay(50);
         }
 
         if (state_change)
         {
-            printf("State change detected\r\n");
+          // printf("State change detected\r\n");
             state_change = 0;
             switch (sys_state)
             {
             case IDLE_STATE: {
-                printf("IDLE_STATE SET\r\n");
+              // printf("IDLE_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_PWR_OFF);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
                 break;
             }
             case PWR_ROUTING_STATE: {
-                printf("PWR_ROUTING_STATE SET\r\n");
+              // printf("PWR_ROUTING_STATE SET\r\n");
                 // By default connect MMC to output if possible
                 if (sys_pwr.mmc.voltage > voltage_backup_cut_in)
                 {
@@ -406,26 +407,26 @@ void pwr_monitor_tsk(void *argument)
                 break;
             }
             case PWR_FORCE_PRIMARY_STATE: {
-                printf("PWR_FORCE_PRIMARY_STATE SET\r\n");
+              // printf("PWR_FORCE_PRIMARY_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_MMC;
                 osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
                 break;
             }
             case PWR_FORCE_BACKUP_STATE: {
-                printf("PWR_FORCE_BACKUP_STATE SET\r\n");
+              // printf("PWR_FORCE_BACKUP_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_BKUP;
                 osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
                 break;
             }
             case OVERLOAD_STATE: {
-                printf("OVERLOAD_STATE SET\r\n");
+              // printf("OVERLOAD_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_OVERLOAD);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_OVERLD);
                 break;
             }
             case EB_STATE: {
-                printf("EB_STATE SET\r\n");
+              // printf("EB_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_EB);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_EB);
@@ -435,6 +436,9 @@ void pwr_monitor_tsk(void *argument)
                 break;
             }
         }
+
+        // report power info to lcd and esp8266 (every one second)
+        xQueueOverwrite(report_pwr_queueHandle, &sys_pwr);
 
         if (sys_state != PWR_ROUTING_STATE)
         {
@@ -502,21 +506,21 @@ void sys_stat_tsk(void *argument)
                              osFlagsWaitAny, osWaitForever);
         if ((state_machine_flags & STATE_MACHINE_OVERLD))
         {
-            printf("SM Overload detected\r\n");
+          // printf("SM Overload detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_OVERLOAD, MQTT_QOS2);
-            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
         else if ((state_machine_flags & STATE_MACHINE_EB))
         {
-            printf("SM EB detected\r\n");
+          // printf("SM EB detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_EB_PRESSED, MQTT_QOS2);
-            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
         else if ((state_machine_flags & STATE_MACHINE_IDLE))
         {
-            printf("SM idle detected\r\n");
+          // printf("SM idle detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL, MQTT_QOS2);
-            osMessageQueuePut(esp_tx_queueHandle, buff, 0, 500);
+            osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
         osDelay(10);
     }
@@ -541,7 +545,7 @@ void pwr_switch_tsk(void *argument)
             osEventFlagsWait(sys_statHandle, EVENT_MMC_EN | EVENT_BKUP_EN | EVENT_PWR_OFF | EVENT_OVERLOAD | EVENT_EB,
                              osFlagsWaitAny, osWaitForever);
         {
-            printf("Event received\r\n");
+          // printf("Event received\r\n");
             if (event_flags & EVENT_MMC_EN)
             {
                 HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
@@ -559,14 +563,12 @@ void pwr_switch_tsk(void *argument)
             else if (event_flags & EVENT_PWR_OFF)
             {
                 HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-                osDelay(100);
                 HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
                 lcd_show_idle();
             }
             else if (event_flags & EVENT_OVERLOAD)
             {
                 HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_RESET);
-                osDelay(100);
                 HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
                 lcd_show_overload();
             }

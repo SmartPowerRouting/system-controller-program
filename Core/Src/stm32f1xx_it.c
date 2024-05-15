@@ -341,7 +341,7 @@ void USART2_IRQHandler(void)
     //}
     if (os_running)
     {
-      if (strstr(uart2_rx_data, "busy p...") == NULL)
+      if (strstr(uart2_rx_data, "p...") == NULL)
       osMessageQueuePut(esp_rx_queueHandle, uart2_rx_data, 0, 0);
     }
     HAL_UART_Receive_DMA(&huart2, uart2_rx_data, 255);
