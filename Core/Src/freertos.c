@@ -338,8 +338,6 @@ void pwr_monitor_tsk(void *argument)
                 voltage_backup_cut_out = user_cmd.voltage_backup_cut_out / 100;
             }
             current_limit = user_cmd.current / 100;
-            //printf("Current limit: %d\n", current_limit);
-            lcd_show_normal();
             lcd_show_limits(voltage_backup_cut_in, voltage_backup_cut_out, current_limit);
         }
 
