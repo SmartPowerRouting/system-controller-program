@@ -271,9 +271,9 @@ void pwr_monitor_tsk(void *argument)
     /* Infinite loop */
     for (;;)
     {
-        // update smart power routing voltage parameters and overload current limit parameter
         // report power info to lcd and esp8266 (every one second)
         xQueueOverwrite(report_pwr_queueHandle, &sys_pwr);
+        // update smart power routing voltage parameters and overload current limit parameter
         if (osMessageQueueGet(usr_cmd_queueHandle, &user_cmd, NULL, 0) == osOK)
         {
             if (user_cmd.voltage_backup_cut_in > 0) // 0 means no change
@@ -386,6 +386,7 @@ void pwr_monitor_tsk(void *argument)
                 printf("IDLE_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_PWR_OFF);
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
                 break;
             }
             case PWR_ROUTING_STATE: {
@@ -419,12 +420,14 @@ void pwr_monitor_tsk(void *argument)
                 printf("OVERLOAD_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_OVERLOAD);
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_OVERLD);
                 break;
             }
             case EB_STATE: {
                 printf("EB_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_EB);
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_EB);
                 break;
             }
             default:
@@ -438,12 +441,14 @@ void pwr_monitor_tsk(void *argument)
         }
 
         // Power Routing Policy Starts Here
-        if (sys_pwr.mmc.voltage < voltage_backup_cut_in)
+        if (sys_pwr.mmc.voltage < voltage_backup_cut_in && sys_pwr.pwr_src != PWR_SRC_BKUP)
         {
+            sys_pwr.pwr_src = PWR_SRC_BKUP;
             osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
         }
-        else if (sys_pwr.mmc.voltage > voltage_backup_cut_out)
+        else if (sys_pwr.mmc.voltage > voltage_backup_cut_out && sys_pwr.pwr_src != PWR_SRC_MMC)
         {
+            sys_pwr.pwr_src = PWR_SRC_MMC;
             osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
         }
 
