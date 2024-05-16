@@ -356,7 +356,7 @@ void pwr_monitor_tsk(void *argument)
 
         //  overload protection
         if ((sys_pwr.mmc.current > current_limit || sys_pwr.bkup.current > current_limit) &&
-            sys_state != OVERLOAD_STATE)
+            (sys_state != OVERLOAD_STATE && sys_state != EB_STATE))
         {
             sys_state = OVERLOAD_STATE;
             state_change = 1;
