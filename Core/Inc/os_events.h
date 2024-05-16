@@ -22,10 +22,10 @@
 #define EVENT_EB 0x01 << 6
 
 // state machine
-#define STATE_MACHINE_IDLE 0x01 << 0              // Idle state
-#define STATE_MACHINE_OVERLD 0x01 << 1            // Overload state
-#define STATE_MACHINE_EB 0x01 << 2                // Emergency backup state
-#define STATE_MACHINE_NORMAL 0x01 << 3            // Normal state
+#define STATE_MACHINE_IDLE 0x01 << 0   // Idle state
+#define STATE_MACHINE_OVERLD 0x01 << 1 // Overload state
+#define STATE_MACHINE_EB 0x01 << 2     // Emergency backup state
+#define STATE_MACHINE_NORMAL 0x01 << 3 // Normal state
 
 #define IDLE_STATE 0
 #define PWR_ROUTING_STATE 1
