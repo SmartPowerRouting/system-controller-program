@@ -11,6 +11,6 @@
 #ifndef __VERSION_H
 #define __VERSION_H
 
-#define SYSTEM_VERSION "v1.3.240516"
+#define SYSTEM_VERSION "v1.4.240516"
 
 #endif // __VERSION_H

@@ -477,6 +477,12 @@ void tmr_report_pwr_clbk(void *argument)
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
+        LCD_ClearRect(0, LCD_MMC_Y, 60 - 0, 20);
+        LCD_ClearRect(70, LCD_MMC_Y, 140 - 70, 20);
+        LCD_ClearRect(150, LCD_MMC_Y, 220 - 150, 20);
+        LCD_ClearRect(0, LCD_BKUP_Y, 60 - 0, 20);
+        LCD_ClearRect(70, LCD_BKUP_Y, 140 - 70, 20);
+        LCD_ClearRect(150, LCD_BKUP_Y, 220 - 150, 20);
         LCD_DisplayDecimals(LCD_VOTAGE_X, LCD_MMC_Y, pwrData_buff.mmc.voltage, 3, 1);
         LCD_DisplayDecimals(LCD_CURRENT_X, LCD_MMC_Y, pwrData_buff.mmc.current, 3, 1);
         LCD_DisplayDecimals(LCD_POWER_X, LCD_MMC_Y, pwrData_buff.mmc.power, 3, 1);
