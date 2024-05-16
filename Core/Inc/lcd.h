@@ -116,16 +116,17 @@ void LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r);
 void LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pImage);
 
 //>>>>>	Display System UI
-void LCD_UI_Init();
+void LCD_UI_Init(void);
 
 // lcd helper functions for rtos
-void lcd_show_idle();
-void lcd_show_normal();
-void lcd_show_overload();
-void lcd_show_eb();
-void lcd_show_backup();
+void lcd_show_idle(void);
+void lcd_show_normal(void);
+void lcd_show_overload(void);
+void lcd_show_eb(void);
+void lcd_show_backup(void);
 void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit);
 void lcd_show_states(uint8_t state);
+void lcd_open_screen(void);
 
 /* Pins Macros */
 #define LCD_SCK_PIN GPIO_PIN_3
@@ -167,9 +168,9 @@ void lcd_show_states(uint8_t state);
 
 #define LCD_VOTAGE_X 16
 #define LCD_CURRENT_X 96
-#define LCD_POWER_X 176
-#define LCD_MMC_Y 120
-#define LCD_BKUP_Y 192
+#define LCD_POWER_X 168
+#define LCD_MMC_Y 128
+#define LCD_BKUP_Y 180
 #define LCD_OUT_Y 264
 #define LCD_SYS_STAT_NORMAL_X (LCD_Width / 2 - 40)
 #define LCD_SYS_STAT_NORMAL_Y 60
