@@ -22,12 +22,10 @@
 #define EVENT_EB 0x01 << 6
 
 // state machine
-#define STATE_MACHINE_IDLE 0x01 << 0              // Idle state, power output cut off
-#define STATE_MACHINE_PWR_ROUTING 0x01 << 1       // Power routing algorithm
-#define STATE_MACHINE_PWR_FORCE_PRIMARY 0x01 << 2 // Force primary power source
-#define STATE_MACHINE_PWR_FORCE_BACKUP 0x01 << 3  // Force backup power source
-#define STATE_MACHINE_OVERLD 0x01 << 4            // Overload state
-#define STATE_MACHINE_EB 0x01 << 5                // Emergency backup state
+#define STATE_MACHINE_IDLE 0x01 << 0              // Idle state
+#define STATE_MACHINE_OVERLD 0x01 << 1            // Overload state
+#define STATE_MACHINE_EB 0x01 << 2                // Emergency backup state
+#define STATE_MACHINE_NORMAL 0x01 << 3            // Normal state
 
 #define IDLE_STATE 0
 #define PWR_ROUTING_STATE 1

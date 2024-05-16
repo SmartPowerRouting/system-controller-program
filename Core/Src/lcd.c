@@ -22,6 +22,8 @@
 #include "printf.h"
 #include "semphr.h"
 #include "task.h"
+#include "version.h"
+#include <string.h>
 
 #define LCD_SPI hspi1         // Define the SPI handler for LCD
 static pFONT *LCD_AsciiFonts; // Define the ASCII font
@@ -1271,8 +1273,8 @@ void LCD_UI_Init()
     LCD_SetAsciiFont(&ASCII_Font24);
     LCD_Clear();
 
-    LCD_DisplayString(50, 92, "WIND TURBINE");
-    LCD_DisplayString(LCD_Width / 2 - 55, 164, "BACKUP SRC");
+    LCD_DisplayString(50, LCD_MMC_Y - 24, "WIND TURBINE");
+    LCD_DisplayString(LCD_Width / 2 - 55, LCD_BKUP_Y - 24, "BACKUP SRC");
 
     LCD_SetAsciiFont(&ASCII_Font20);
     LCD_DisplayChar(60, LCD_MMC_Y, 'V');
@@ -1294,6 +1296,11 @@ void LCD_UI_Init()
     LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
     LCD_SetColor(LCD_BLACK);
     LCD_DisplayString(LCD_SYS_STAT_IDLE_X, LCD_SYS_STAT_IDLE_Y, "IDLE");
+
+    LCD_SetAsciiFont(&ASCII_Font12);
+    LCD_SetColor(LCD_BLACK);
+    LCD_SetBackColor(LCD_WHITE);
+    LCD_DisplayString(LCD_Width - strlen(SYSTEM_VERSION) * 6, LCD_Height - 12, SYSTEM_VERSION);
 }
 
 /*
@@ -1440,4 +1447,19 @@ void lcd_show_states(uint8_t state)
         taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
+}
+
+extern uint8_t img_warning[];
+void lcd_open_screen()
+{
+    LCD_SetColor(LCD_BLACK);
+    LCD_SetBackColor(LCD_WHITE);
+    LCD_Clear();
+    LCD_DrawImage(LCD_Width / 2 - 32, LCD_Height / 2 - 28 - 20, 64, 56, img_warning);
+    LCD_SetAsciiFont(&ASCII_Font20);
+    LCD_DisplayString(LCD_Width / 2 - 90, LCD_Height / 2 + 28 - 20, "KEEP CLEAR OF ROTOR");
+    LCD_SetAsciiFont(&ASCII_Font12);
+    LCD_SetColor(LCD_BLACK);
+    LCD_SetBackColor(LCD_WHITE);
+    LCD_DisplayString(LCD_Width - strlen(SYSTEM_VERSION) * 6, LCD_Height - 12, SYSTEM_VERSION);
 }
