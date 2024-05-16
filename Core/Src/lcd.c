@@ -1274,7 +1274,7 @@ void LCD_UI_Init()
     LCD_Clear();
 
     LCD_DisplayString(50, LCD_MMC_Y - 24, "WIND TURBINE");
-    LCD_DisplayString(LCD_Width / 2 - 55, LCD_BKUP_Y - 24, "BACKUP SRC");
+    LCD_DisplayString(LCD_Width / 2 - 60, LCD_BKUP_Y - 24, "BACKUP SRC");
 
     LCD_SetAsciiFont(&ASCII_Font20);
     LCD_DisplayChar(60, LCD_MMC_Y, 'V');
@@ -1312,14 +1312,12 @@ void lcd_show_overload()
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_RED);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_WHITE);
         LCD_SetBackColor(LCD_RED);
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_OVLD_X, LCD_SYS_STAT_OVLD_Y, "OVERLOAD");
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1328,14 +1326,12 @@ void lcd_show_normal()
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_BLUE);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_WHITE);
         LCD_SetBackColor(LCD_BLUE);
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_NORMAL_X, LCD_SYS_STAT_NORMAL_Y, "WIND PWR");
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1344,7 +1340,6 @@ void lcd_show_eb()
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_ClearRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_RED);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
@@ -1352,7 +1347,6 @@ void lcd_show_eb()
         LCD_SetBackColor(LCD_RED);
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_EMERGENCY_STOP_X, LCD_SYS_STAT_EMERGENCY_STOP_Y, "EMERGENCY");
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1361,14 +1355,12 @@ void lcd_show_backup()
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_YELLOW);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_YELLOW);
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_BKUP_X, LCD_SYS_STAT_BKUP_Y, "BACKUP");
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1377,14 +1369,12 @@ void lcd_show_idle()
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_GREEN);
         LCD_FillRect(LCD_SYS_STAT_BOX_X, LCD_SYS_STAT_BOX_Y, LCD_SYS_STAT_BOX_WIDTH, LCD_SYS_STAT_BOX_HEIGHT);
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_GREEN);
         LCD_SetAsciiFont(&ASCII_Font20);
         LCD_DisplayString(LCD_SYS_STAT_IDLE_X, LCD_SYS_STAT_IDLE_Y, "IDLE");
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1393,7 +1383,6 @@ void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit)
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetAsciiFont(&ASCII_Font16);
@@ -1409,7 +1398,6 @@ void lcd_show_limits(uint8_t v_cutin, uint8_t v_cutout, uint8_t i_limit)
         LCD_DisplayNumber(131, 240, v_cutin, 1);
         LCD_DisplayNumber(141, 260, v_cutout, 1);
         LCD_DisplayNumber(121, 280, i_limit, 1);
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1418,7 +1406,6 @@ void lcd_show_states(uint8_t state)
 {
     if (osMutexAcquire(lcd_mutexHandle, 500) == osOK)
     {
-        taskENTER_CRITICAL();
         LCD_SetColor(LCD_BLACK);
         LCD_SetBackColor(LCD_WHITE);
         LCD_SetAsciiFont(&ASCII_Font16);
@@ -1444,7 +1431,6 @@ void lcd_show_states(uint8_t state)
         default:
             break;
         }
-        taskEXIT_CRITICAL();
         osMutexRelease(lcd_mutexHandle);
     }
 }
@@ -1452,12 +1438,15 @@ void lcd_show_states(uint8_t state)
 extern uint8_t img_warning[];
 void lcd_open_screen()
 {
-    LCD_SetColor(LCD_BLACK);
+    LCD_SetColor(LCD_RED);
     LCD_SetBackColor(LCD_WHITE);
     LCD_Clear();
-    LCD_DrawImage(LCD_Width / 2 - 32, LCD_Height / 2 - 28 - 20, 64, 56, img_warning);
-    LCD_SetAsciiFont(&ASCII_Font20);
-    LCD_DisplayString(LCD_Width / 2 - 90, LCD_Height / 2 + 28 - 20, "KEEP CLEAR OF ROTOR");
+    LCD_SetAsciiFont(&ASCII_Font32);
+    LCD_DisplayString(LCD_Width / 2 - 3 * 16, LCD_Height / 2 + 28 - 20 - 70 - 56, "DANGER");
+    LCD_SetColor(LCD_BLACK);
+    LCD_DrawImage(LCD_Width / 2 - 32, LCD_Height / 2 - 28 - 40, 64, 56, img_warning);
+    LCD_SetAsciiFont(&ASCII_Font24);
+    LCD_DisplayString(LCD_Width / 2 - 110, LCD_Height / 2 + 28 - 30, "KEEP CLEAR OF ROTOR");
     LCD_SetAsciiFont(&ASCII_Font12);
     LCD_SetColor(LCD_BLACK);
     LCD_SetBackColor(LCD_WHITE);
