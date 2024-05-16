@@ -37,7 +37,7 @@ extern ADC_HandleTypeDef hadc1;
 /* USER CODE BEGIN Private defines */
 #define ADC_COEFFICIENT 1320.00
 #define ADC_COEFFICIENT_VOLTAGE_BKUP 5.4
-#define ADC_COEFFICIENT_VOLTAGE_MMC 4.
+#define ADC_COEFFICIENT_VOLTAGE_MMC 11.
 #define ADC_COEFFICIENT_VOLTAGE 16.
 /* USER CODE END Private defines */
 
