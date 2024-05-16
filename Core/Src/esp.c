@@ -53,7 +53,6 @@ extern osEventFlagsId_t state_machineHandle;
 // mutexes
 extern osMutexId_t adc_mutexHandle;
 extern osMutexId_t lcd_mutexHandle;
-extern osMutexId_t esp_mutexHandle;
 
 // semaphores
 extern osSemaphoreId_t report_pwr_semphrHandle;
@@ -65,10 +64,8 @@ extern osSemaphoreId_t report_pwr_semphrHandle;
 void esp_init_os(void)
 {
     uint8_t cmd[256] = {0};
-    uint8_t esp_response_buff[256] = {0};           // ESP response buffer (privately
-                                                    // used in this function)
-    osMutexRelease(esp_mutexHandle);                // force release the esp
-    osMutexAcquire(esp_mutexHandle, osWaitForever); // acquire mutex
+    uint8_t esp_response_buff[256] = {0}; // ESP response buffer (privately
+                                          // used in this function)
     // Perform reset
     osDelay(1000);
     HAL_GPIO_WritePin(WIFI_STAT_LED_GPIO_Port, WIFI_STAT_LED_Pin, GPIO_PIN_RESET);
@@ -346,7 +343,6 @@ void esp_init_os(void)
     sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
     osMessageQueuePut(esp_tx_queueHandle, cmd, 1, 0);
     osEventFlagsSet(sys_statHandle, EVENT_MQTT_CONN_STAT);
-    osMutexRelease(esp_mutexHandle);
 }
 
 /*
@@ -371,15 +367,10 @@ void esp_msg_tsk(void *argument)
         uint32_t sys_event = 0;
 
         // Send Message
-        if (osMessageQueueGetCount(esp_tx_queueHandle) > 0)
+        if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
         {
-            if (osMutexAcquire(esp_mutexHandle, 0) == osOK)
-            {
-                if (osMessageQueueGet(esp_tx_queueHandle, buff, NULL, 0) == osOK)
-                {
-                    HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
-                }
-            }
+            HAL_UART_Transmit_DMA(&huart2, buff, strlen(buff));
+            osDelay(300);
         }
 
         // Receive message
@@ -458,12 +449,6 @@ void esp_msg_tsk(void *argument)
             if (strstr((char *)buff, "+MQTTSUBRECV:0") != NULL)
             {
                 osMessageQueuePut(mqtt_rx_msg_queueHandle, buff, 0, osWaitForever);
-            }
-
-            // Case f: received OK or ERROR
-            if (strstr((char *)buff, "OK") != NULL || strstr((char *)buff, "ERROR") != NULL)
-            {
-                osMutexRelease(esp_mutexHandle);
             }
         }
     }
