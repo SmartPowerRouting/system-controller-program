@@ -314,15 +314,14 @@ void pwr_monitor_tsk(void *argument)
                     sys_state = PWR_FORCE_BACKUP_STATE;
                     lcd_show_states(3);
                     break;
-                default:
+                default:    // invalid command
+                    sys_state = IDLE_STATE;
+                    lcd_show_states(0);
                     break;
                 }
-
-                // set event flags
-                osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
             }
             // send response back to user
-            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 1, 500);
+            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 1, 1000);
             lcd_show_limits(voltage_backup_cut_in, voltage_backup_cut_out, current_limit);
         }
 
