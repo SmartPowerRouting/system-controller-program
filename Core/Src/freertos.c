@@ -128,6 +128,9 @@ const osMutexAttr_t adc_mutex_attributes = {.name = "adc_mutex"};
 /* Definitions for lcd_mutex */
 osMutexId_t lcd_mutexHandle;
 const osMutexAttr_t lcd_mutex_attributes = {.name = "lcd_mutex"};
+/* Definitions for esp_mutex */
+osMutexId_t esp_mutexHandle;
+const osMutexAttr_t esp_mutex_attributes = {.name = "esp_mutex"};
 /* Definitions for sys_stat */
 osEventFlagsId_t sys_statHandle;
 const osEventFlagsAttr_t sys_stat_attributes = {.name = "sys_stat"};
@@ -166,6 +169,9 @@ void MX_FREERTOS_Init(void)
 
     /* creation of lcd_mutex */
     lcd_mutexHandle = osMutexNew(&lcd_mutex_attributes);
+
+    /* creation of esp_mutex */
+    esp_mutexHandle = osMutexNew(&esp_mutex_attributes);
 
     /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
@@ -290,31 +296,31 @@ void pwr_monitor_tsk(void *argument)
             // apply user command specified mode to the system
             if (sys_state != EB_STATE)
             {
-              // printf("User command received\r\n");
+                // printf("User command received\r\n");
                 state_change = 1;
                 switch (user_cmd.mode)
                 {
                 case (CMD_PWR_OFF - '0'):
-                  // printf("CMD_PWR_OFF\r\n");
+                    // printf("CMD_PWR_OFF\r\n");
                     sys_state = IDLE_STATE;
                     lcd_show_states(0);
                     break;
                 case (CMD_SMART_PWR_ROUTING - '0'):
-                  // printf("CMD_SMART_PWR_ROUTING\r\n");
+                    // printf("CMD_SMART_PWR_ROUTING\r\n");
                     sys_state = PWR_ROUTING_STATE;
                     lcd_show_states(1);
                     break;
                 case (CMD_PWR_FORCE_PRIMARY - '0'):
-                  // printf("CMD_PWR_FORCE_PRIMARY\r\n");
+                    // printf("CMD_PWR_FORCE_PRIMARY\r\n");
                     sys_state = PWR_FORCE_PRIMARY_STATE;
                     lcd_show_states(2);
                     break;
                 case (CMD_PWR_FORCE_BACKUP - '0'):
-                  // printf("CMD_PWR_FORCE_BACKUP\r\n");
+                    // printf("CMD_PWR_FORCE_BACKUP\r\n");
                     sys_state = PWR_FORCE_BACKUP_STATE;
                     lcd_show_states(3);
                     break;
-                default:    // invalid command
+                default: // invalid command
                     sys_state = IDLE_STATE;
                     lcd_show_states(0);
                     break;
@@ -379,19 +385,19 @@ void pwr_monitor_tsk(void *argument)
 
         if (state_change)
         {
-          // printf("State change detected\r\n");
+            // printf("State change detected\r\n");
             state_change = 0;
             switch (sys_state)
             {
             case IDLE_STATE: {
-              // printf("IDLE_STATE SET\r\n");
+                // printf("IDLE_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_PWR_OFF);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_IDLE);
                 break;
             }
             case PWR_ROUTING_STATE: {
-              // printf("PWR_ROUTING_STATE SET\r\n");
+                // printf("PWR_ROUTING_STATE SET\r\n");
                 // By default connect MMC to output if possible
                 if (sys_pwr.mmc.voltage > voltage_backup_cut_in)
                 {
@@ -408,28 +414,28 @@ void pwr_monitor_tsk(void *argument)
                 break;
             }
             case PWR_FORCE_PRIMARY_STATE: {
-              // printf("PWR_FORCE_PRIMARY_STATE SET\r\n");
+                // printf("PWR_FORCE_PRIMARY_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_MMC;
                 osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_NORMAL);
                 break;
             }
             case PWR_FORCE_BACKUP_STATE: {
-              // printf("PWR_FORCE_BACKUP_STATE SET\r\n");
+                // printf("PWR_FORCE_BACKUP_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_BKUP;
                 osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_NORMAL);
                 break;
             }
             case OVERLOAD_STATE: {
-              // printf("OVERLOAD_STATE SET\r\n");
+                // printf("OVERLOAD_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_OVERLOAD);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_OVERLD);
                 break;
             }
             case EB_STATE: {
-              // printf("EB_STATE SET\r\n");
+                // printf("EB_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_OFF;
                 osEventFlagsSet(sys_statHandle, EVENT_EB);
                 osEventFlagsSet(state_machineHandle, STATE_MACHINE_EB);
@@ -504,24 +510,24 @@ void sys_stat_tsk(void *argument)
     {
         osEventFlagsWait(sys_statHandle, EVENT_MQTT_CONN_STAT, osFlagsNoClear,
                          osWaitForever); // wait for mqtt connection
-        state_machine_flags =
-            osEventFlagsWait(state_machineHandle, STATE_MACHINE_EB | STATE_MACHINE_OVERLD | STATE_MACHINE_IDLE | STATE_MACHINE_NORMAL,
-                             osFlagsWaitAny, osWaitForever);
+        state_machine_flags = osEventFlagsWait(
+            state_machineHandle, STATE_MACHINE_EB | STATE_MACHINE_OVERLD | STATE_MACHINE_IDLE | STATE_MACHINE_NORMAL,
+            osFlagsWaitAny, osWaitForever);
         if ((state_machine_flags & STATE_MACHINE_OVERLD))
         {
-          // printf("SM Overload detected\r\n");
+            // printf("SM Overload detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_OVERLOAD, MQTT_QOS2);
             osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
         else if ((state_machine_flags & STATE_MACHINE_EB))
         {
-          // printf("SM EB detected\r\n");
+            // printf("SM EB detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_EB_PRESSED, MQTT_QOS2);
             osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
         else if ((state_machine_flags & STATE_MACHINE_IDLE) || (state_machine_flags & STATE_MACHINE_NORMAL))
         {
-          // printf("SM idle detected\r\n");
+            // printf("SM idle detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL, MQTT_QOS2);
             osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
@@ -548,7 +554,7 @@ void pwr_switch_tsk(void *argument)
             osEventFlagsWait(sys_statHandle, EVENT_MMC_EN | EVENT_BKUP_EN | EVENT_PWR_OFF | EVENT_OVERLOAD | EVENT_EB,
                              osFlagsWaitAny, osWaitForever);
         {
-          // printf("Event received\r\n");
+            // printf("Event received\r\n");
             if (event_flags & EVENT_MMC_EN)
             {
                 HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
