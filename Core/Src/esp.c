@@ -336,6 +336,9 @@ void esp_init_os(void)
 
     osMessageQueueReset(esp_tx_queueHandle); // empty the message queue
 
+    sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"\",2,1\r\n", MQTT_TOPIC_WARN); // cancel retain msg
+    osMessageQueuePut(esp_tx_queueHandle, cmd, 1, 0);
+
     // send system online msg
     sprintf(cmd, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
     osMessageQueuePut(esp_tx_queueHandle, cmd, 1, 0);
@@ -438,6 +441,8 @@ void esp_msg_tsk(void *argument)
                 LCD_DisplayString(LCD_MQTT_CLNT_X, LCD_MQTT_CLNT_Y, MQTT_CLIENT_ID);
                 osMutexRelease(lcd_mutexHandle);
                 osMessageQueueReset(esp_tx_queueHandle); // empty the message queue
+                sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",2,1\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL);
+                osMessageQueuePut(esp_tx_queueHandle, buff, 1, 0);
             }
 
             // Case e: Received MQTT msg
