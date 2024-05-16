@@ -403,18 +403,22 @@ void pwr_monitor_tsk(void *argument)
                     sys_pwr.pwr_src = PWR_SRC_BKUP;
                     osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
                 }
+                // set state machine
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_NORMAL);
                 break;
             }
             case PWR_FORCE_PRIMARY_STATE: {
               // printf("PWR_FORCE_PRIMARY_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_MMC;
                 osEventFlagsSet(sys_statHandle, EVENT_MMC_EN);
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_NORMAL);
                 break;
             }
             case PWR_FORCE_BACKUP_STATE: {
               // printf("PWR_FORCE_BACKUP_STATE SET\r\n");
                 sys_pwr.pwr_src = PWR_SRC_BKUP;
                 osEventFlagsSet(sys_statHandle, EVENT_BKUP_EN);
+                osEventFlagsSet(state_machineHandle, STATE_MACHINE_NORMAL);
                 break;
             }
             case OVERLOAD_STATE: {
@@ -501,7 +505,7 @@ void sys_stat_tsk(void *argument)
         osEventFlagsWait(sys_statHandle, EVENT_MQTT_CONN_STAT, osFlagsNoClear,
                          osWaitForever); // wait for mqtt connection
         state_machine_flags =
-            osEventFlagsWait(state_machineHandle, STATE_MACHINE_EB | STATE_MACHINE_OVERLD | STATE_MACHINE_IDLE,
+            osEventFlagsWait(state_machineHandle, STATE_MACHINE_EB | STATE_MACHINE_OVERLD | STATE_MACHINE_IDLE | STATE_MACHINE_NORMAL,
                              osFlagsWaitAny, osWaitForever);
         if ((state_machine_flags & STATE_MACHINE_OVERLD))
         {
@@ -515,7 +519,7 @@ void sys_stat_tsk(void *argument)
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_EB_PRESSED, MQTT_QOS2);
             osMessageQueuePut(esp_tx_queueHandle, buff, 1, 500);
         }
-        else if ((state_machine_flags & STATE_MACHINE_IDLE))
+        else if ((state_machine_flags & STATE_MACHINE_IDLE) || (state_machine_flags & STATE_MACHINE_NORMAL))
         {
           // printf("SM idle detected\r\n");
             sprintf(buff, "AT+MQTTPUB=0,\"%s\",\"%d\",%d,0\r\n", MQTT_TOPIC_WARN, MQTT_WARN_NORMAL, MQTT_QOS2);
