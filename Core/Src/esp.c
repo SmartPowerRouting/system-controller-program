@@ -605,5 +605,5 @@ uint16_t voltage_current_format(float f)
  */
 uint16_t power_format(float f)
 {
-    return (uint16_t)(f * 10) % 10000;
+    return (uint16_t)(f * 100) % 10000;
 }
