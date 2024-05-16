@@ -321,7 +321,7 @@ void pwr_monitor_tsk(void *argument)
                 }
             }
             // send response back to user
-            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",1,2,0\r\n", 1, 1000);
+            osMessageQueuePut(esp_tx_queueHandle, "AT+MQTTPUB=0,\"system/response\",\"1\",2,0\r\n", 1, 1000);
             lcd_show_limits(voltage_backup_cut_in, voltage_backup_cut_out, current_limit);
         }
 
@@ -551,9 +551,9 @@ void pwr_switch_tsk(void *argument)
           // printf("Event received\r\n");
             if (event_flags & EVENT_MMC_EN)
             {
-                HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
-                osDelay(100);
                 HAL_GPIO_WritePin(BKUP_EN_GPIO_Port, BKUP_EN_Pin, GPIO_PIN_RESET);
+                osDelay(100);
+                HAL_GPIO_WritePin(MMC_EN_GPIO_Port, MMC_EN_Pin, GPIO_PIN_SET);
                 lcd_show_normal();
             }
             else if (event_flags & EVENT_BKUP_EN)
