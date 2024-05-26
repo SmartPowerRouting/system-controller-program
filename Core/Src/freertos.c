@@ -326,6 +326,7 @@ void pwr_monitor_tsk(void *argument)
         }
 
         // get ADC data 100 times
+				printf("ADC Read\r\n");
         memset(adc_value_accumulate, 0, sizeof(adc_value_accumulate));
         for (uint8_t i = 0; i < 100; i++)
         {

@@ -1,0 +1,134 @@
+Configuration	system-controller-program
+STM32CubeMX 	6.11.0
+Date	05/21/2024
+MCU	STM32F103ZETx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN0	ADC1_IN0	PA0-WKUP
+ADC1	IN1	ADC1_IN1	PA1
+ADC1	IN2	ADC1_IN2	PA2
+ADC1	IN3	ADC1_IN3	PA3
+ADC1	IN4	ADC1_IN4	PA4
+ADC1	IN5	ADC1_IN5	PA5
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	OSC_OUT
+SPI1	Half-Duplex Master	SPI1_MOSI	PB5
+SPI1	Half-Duplex Master	SPI1_SCK	PB3
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	TIM1	SYS_VS_tim1	VP_SYS_VS_tim1
+USART1	Asynchronous	USART1_RX	PA10
+USART1	Asynchronous	USART1_TX	PA9
+USART2	Asynchronous	USART2_RX	PD6
+USART2	Asynchronous	USART2_TX	PD5
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+12	PF2	GPIO_Output	WIFI_STAT_LED
+13	PF3	GPIO_Output	FAULT
+14	PF4	GPIO_Input	K_EB
+15	PF5	GPIO_Output	MQTTSRV_STAT
+23	OSC_IN	RCC_OSC_IN	
+24	OSC_OUT	RCC_OSC_OUT	
+34	PA0-WKUP	ADC1_IN0	ADC1_VMMC
+35	PA1	ADC1_IN1	ADC1_VBKUP
+36	PA2	ADC1_IN2	ADC1_VOUT
+37	PA3	ADC1_IN3	
+40	PA4	ADC1_IN4	
+41	PA5	ADC1_IN5	
+58	PE7	GPIO_Output	MMC_EN
+59	PE8	GPIO_Output	BKUP_EN
+60	PE9	GPIO_Output	TB_BRAKE
+63	PE10	GPIO_Output	TB_RELEASE
+80	PD11	GPIO_Output	LCD_CS
+81	PD12	GPIO_Output	LCD_DC
+82	PD13	GPIO_Output	LCD_Backlight
+98	PC8	GPIO_Output	OS_STAT
+101	PA9	USART1_TX	
+102	PA10	USART1_RX	
+105	PA13	SYS_JTMS-SWDIO	
+109	PA14	SYS_JTCK-SWCLK	
+119	PD5	USART2_TX	
+122	PD6	USART2_RX	
+133	PB3	SPI1_SCK	
+135	PB5	SPI1_MOSI	
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN0	ADC1_IN0	PA0-WKUP
+ADC1	IN1	ADC1_IN1	PA1
+ADC1	IN2	ADC1_IN2	PA2
+ADC1	IN3	ADC1_IN3	PA3
+ADC1	IN4	ADC1_IN4	PA4
+ADC1	IN5	ADC1_IN5	PA5
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	OSC_OUT
+SPI1	Half-Duplex Master	SPI1_MOSI	PB5
+SPI1	Half-Duplex Master	SPI1_SCK	PB3
+SYS	Serial Wire	SYS_JTCK-SWCLK	PA14
+SYS	Serial Wire	SYS_JTMS-SWDIO	PA13
+SYS	TIM1	SYS_VS_tim1	VP_SYS_VS_tim1
+USART1	Asynchronous	USART1_RX	PA10
+USART1	Asynchronous	USART1_TX	PA9
+USART2	Asynchronous	USART2_RX	PD6
+USART2	Asynchronous	USART2_TX	PD5
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+12	PF2	GPIO_Output	WIFI_STAT_LED
+13	PF3	GPIO_Output	FAULT
+14	PF4	GPIO_Input	K_EB
+15	PF5	GPIO_Output	MQTTSRV_STAT
+23	OSC_IN	RCC_OSC_IN	
+24	OSC_OUT	RCC_OSC_OUT	
+34	PA0-WKUP	ADC1_IN0	ADC1_VMMC
+35	PA1	ADC1_IN1	ADC1_VBKUP
+36	PA2	ADC1_IN2	ADC1_VOUT
+37	PA3	ADC1_IN3	
+40	PA4	ADC1_IN4	
+41	PA5	ADC1_IN5	
+58	PE7	GPIO_Output	MMC_EN
+59	PE8	GPIO_Output	BKUP_EN
+60	PE9	GPIO_Output	TB_BRAKE
+63	PE10	GPIO_Output	TB_RELEASE
+80	PD11	GPIO_Output	LCD_CS
+81	PD12	GPIO_Output	LCD_DC
+82	PD13	GPIO_Output	LCD_Backlight
+98	PC8	GPIO_Output	OS_STAT
+101	PA9	USART1_TX	
+102	PA10	USART1_RX	
+105	PA13	SYS_JTMS-SWDIO	
+109	PA14	SYS_JTCK-SWCLK	
+119	PD5	USART2_TX	
+122	PD6	USART2_RX	
+133	PB3	SPI1_SCK	
+135	PB5	SPI1_MOSI	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : system-controller-program
+Project Folder : D:\Senior Design Repos\system-controller-program
+Toolchain / IDE : MDK-ARM V5.32
+Firmware Package Name and Version : STM32Cube FW_F1 V1.8.5
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+
